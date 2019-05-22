@@ -1,0 +1,2 @@
+- ExtractVideoToFrame: its name says its function lmao
+- gt_office: the ground_truth file that contains info of labels in the videos
