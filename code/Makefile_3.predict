@@ -1,0 +1,4 @@
+python:
+
+	python3 tars_predict.py -idl "data" -ll "models/vgg11_True_freeze_True_freeze_initial_layer.pth" -mo "vgg11" -nc 12
+	

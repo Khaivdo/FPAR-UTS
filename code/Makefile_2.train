@@ -1,0 +1,20 @@
+DATA_LOC=-idl "/media/ml/Scene_classification/code/pytorch_classifiers/data"
+MIXUP=-mx 
+MIXUP_ALPHA=-mxal 0.1
+SAVE_LOC="models/"
+NUM_EPOCHS=-ep 30
+
+all: vggs_bn
+	echo "Training all nets are done"
+
+
+vggs_bn:
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg11_bn" $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg11_bn" -f $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg13_bn" $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg13_bn" -f $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg16_bn" $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg16_bn" -f $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg19_bn" $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+	python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "vgg19_bn" -f $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
+
