@@ -1,5 +1,5 @@
 ## Main
-- segmentedVideos: is used to extract frames automatically from VIP CUP segmented video sequences. Please download all the segmented videos and put them in the same directory with the code before you run it.
+- segmentedVideos: is used to extract frames automatically from VIP CUP segmented video sequences. Make sure you download all the segmented videos and put them in the same directory with the code.
 
 ## Others
 - ExtractVideoToFrame: is used to extract frames from a video given Start and End time
