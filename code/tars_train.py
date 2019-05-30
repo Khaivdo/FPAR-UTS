@@ -18,17 +18,18 @@ from tars.tars_model import *
 
 parser = argparse.ArgumentParser(description='Training a pytorch model to classify different plants')
 parser.add_argument('-idl', '--input_data_loc', help='', default='data')
-parser.add_argument('-mo', '--model_name', default="resnet18")
+parser.add_argument('-mo', '--model_name', default="resnet50")
 parser.add_argument('-f', '--freeze_layers', default=True, action='store_false', help='Bool type')
 parser.add_argument('-fi', '--freeze_initial_layers', default=True, action='store_false', help='Bool type')
-parser.add_argument('-ep', '--epochs', default=20, type=int)
-parser.add_argument('-b', '--batch_size', default=8, type=int)
+parser.add_argument('-ep', '--epochs', default=30, type=int)
+parser.add_argument('-b', '--batch_size', default=32, type=int)
 parser.add_argument('-is', '--input_shape', default=224, type=int)
 parser.add_argument('-sl', '--save_loc', default="models/" )
 parser.add_argument("-g", '--use_gpu', default=True, action='store_false', help='Bool type gpu')
 parser.add_argument("-p", '--use_parallel', default=True, action='store_false', help='Bool type to use_parallel')
 parser.add_argument("-mx", '--mixup', default=True, action='store_true' ,help='Use mixup data augementation')
 parser.add_argument("-mxal", '--mixup_alpha', default=0.1, type = float, help='Alpha to be used in mixup agumentation')
+
 
 args = parser.parse_args()
 

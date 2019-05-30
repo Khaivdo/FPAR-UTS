@@ -1,0 +1,7 @@
+DATA_LOC=-idl r"C:\Users\miemie\Desktop\code\data"
+MIXUP=-mx 
+MIXUP_ALPHA=-mxal 0.1
+SAVE_LOC="models/"
+NUM_EPOCHS=-ep 1
+
+python tars_train.py $(DATA_LOC) -sl $(SAVE_LOC) -mo "resnet18" $(NUM_EPOCHS) $(MIXUP) $(MIXUP_ALPHA)
