@@ -12,6 +12,7 @@ from tars.resnext import resnext101_32x4d, resnext101_64x4d
 from tars.inceptionresnetv2 import inceptionresnetv2
 from tars.inceptionv4 import inceptionv4
 from tars.bninception import bninception
+from tars.resnet import resnet50
 
 """
 resnet18, resnet34, resnet50, resnet101, resnet152
@@ -80,7 +81,7 @@ def all_pretrained_models(n_class, use_gpu=True, freeze_layers=False, freeze_ini
         model_conv = torchvision.models.resnet34(pretrained=weights)
     elif name == "resnet50":
         print("[Building resnet50]")
-        model_conv = torchvision.models.resnet50(pretrained=weights)
+        model_conv = resnet50(pretrained=weights)
     elif name == "resnet101":
         print("[Building resnet101]")
         model_conv = torchvision.models.resnet101(pretrained=weights)
