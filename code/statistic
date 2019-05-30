@@ -1,8 +1,15 @@
-typeset-read-mobile
-staple?
-machine-take
-chat-wave-shake
-whiteboard - clean
-print-walk
-staple-paper
-dryer-wash
+
+'chat' 0, 'clean' 1, 'drink' 2, 'dryer' 3, 'machine' 4, 'microwave' 5, 'mobile' 6, 'paper' 7, 'print' 8, 'read' 9, 'shake' 10, 'staple' 11, 'take' 12, 'typeset' 13, 'walk' 14
+
+Group1:
+1) typeset-read-mobile 13-9-6
+1) machine-take 4-12
+1) staple-paper 11-7
+1) 
+
+Group2:
+2) chat-wave-shake 0-10
+2) whiteboard - clean 1
+2) print-walk 8-14
+2) dryer-wash 3
+2) drink - microwave 2-5

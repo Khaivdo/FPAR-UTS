@@ -22,7 +22,7 @@ parser.add_argument('-mo', '--model_name', default="resnet50")
 parser.add_argument('-f', '--freeze_layers', default=True, action='store_false', help='Bool type')
 parser.add_argument('-fi', '--freeze_initial_layers', default=True, action='store_false', help='Bool type')
 parser.add_argument('-ep', '--epochs', default=30, type=int)
-parser.add_argument('-b', '--batch_size', default=32, type=int)
+parser.add_argument('-b', '--batch_size', default=1, type=int)
 parser.add_argument('-is', '--input_shape', default=224, type=int)
 parser.add_argument('-sl', '--save_loc', default="models/" )
 parser.add_argument("-g", '--use_gpu', default=True, action='store_false', help='Bool type gpu')
@@ -47,7 +47,7 @@ if args.use_parallel:
 
 print("[Using CrossEntropyLoss...]")
 criterion = nn.CrossEntropyLoss()
-
+criterion1 = nn.BCELoss()
 print("[Using small learning rate with momentum...]")
 optimizer_conv = optim.SGD(list(filter(lambda p: p.requires_grad, model_conv.parameters())), lr=0.001, momentum=0.9)
 
@@ -56,7 +56,7 @@ exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1)
 
 print("[Training the model begun ....]")
 print(args.mixup, args.mixup_alpha)
-model_ft = train_model(model_conv, dataloaders, dataset_sizes, criterion, optimizer_conv, exp_lr_scheduler, args.use_gpu,
+model_ft = train_model(model_conv, dataloaders, dataset_sizes, criterion,criterion1, optimizer_conv, exp_lr_scheduler, args.use_gpu,
                        num_epochs=args.epochs, mixup = args.mixup, alpha = args.mixup_alpha)
 
 print("[Save the best model]")

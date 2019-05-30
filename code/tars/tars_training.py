@@ -18,8 +18,40 @@ import pandas as pd
 
 from tars.utils import *
 from tars.tars_data_loaders import *
-
-def train_model(model, dataloaders, dataset_sizes, criterion, optimizer, scheduler, use_gpu, num_epochs=25, mixup = False, alpha = 0.1):
+def assigned_label(labels):
+    label1= torch.tensor([0,1])
+    label2= labels
+    labels1= labels.clone()
+    labels2= labels.clone()
+#    if  labels==0:
+#        lable1= torch.tensor([0])
+#    else:
+#        lable1= torch.tensor([1])
+    if (labels== 0 or labels== 1 or labels== 2 or labels== 3 or labels== 5 or labels== 8 or labels== 10 or labels== 14):
+        labels1=torch.tensor([0])
+    else:
+        labels1=torch.tensor([1])
+    
+    
+    if (labels== 0  or labels== 4):
+        labels2=torch.tensor([0])
+    elif (labels== 1  or labels== 6):
+        labels2=torch.tensor([1])
+    elif (labels== 2  or labels== 7):
+        labels2=torch.tensor([2])
+    elif (labels== 3  or labels== 9):
+        labels2=torch.tensor([3])
+    elif (labels== 5  or labels== 11):
+        labels2=torch.tensor([4])
+    elif (labels== 8  or labels== 12):
+        labels2=torch.tensor([5])
+    elif (labels== 10  or labels== 13):
+        labels2=torch.tensor([6])
+    elif (labels== 14):
+        labels2=torch.tensor([7])
+    return labels1, labels2
+    
+def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimizer, scheduler, use_gpu, num_epochs=25, mixup = False, alpha = 0.1):
     print("MIXUP".format(mixup))
     since = time.time()
 
@@ -45,35 +77,40 @@ def train_model(model, dataloaders, dataset_sizes, criterion, optimizer, schedul
             for data in tqdm(dataloaders[phase]):
                 # get the inputs
                 inputs, labels = data
-
+                labels1, labels2 = assigned_label(labels)
                 #augementation using mixup
                 if phase == 'train' and mixup:
                     inputs = mixup_batch(inputs, alpha)
                 # wrap them in Variable
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
-                    labels = Variable(labels.cuda())
+                    labels1 = Variable(labels1.type(torch.FloatTensor).cuda())
+                    labels2 = Variable(labels2.cuda())
                 else:
-                    inputs, labels = Variable(inputs), Variable(labels)
+                    inputs, labels1, labels2  = Variable(inputs), Variable(labels1), Variable(labels2)
 
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward
-                outputs = model(inputs)
-                if type(outputs) == tuple:
-                    outputs, _ = outputs
-                _, preds = torch.max(outputs.data, 1)
-                loss = criterion(outputs, labels)
-
+                outputs1,outputs2 = model(inputs,labels1)
+                if type(outputs1) == tuple:
+                    outputs1, _ = outputs1
+                if type(outputs2) == tuple:
+                    outputs2, _ = outputs2
+                _, preds = torch.max(outputs2.data, 1)
+                loss1 = criterion1(outputs1, labels1)
+                loss2 = criterion(outputs2, labels2)
+                loss = loss1+loss2
                 # backward + optimize only if in training phase
                 if phase == 'train':
+#                    optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
 
                 # statistics
-                running_loss += loss.data[0]
-                running_corrects += torch.sum(preds == labels.data)
+                running_loss += loss.item()
+                running_corrects += torch.sum(preds == labels2.data)
             running_loss_ = running_loss.cpu().numpy()
             epoch_loss = running_loss_ / float(dataset_sizes[phase])
             running_corrects_ = running_corrects.cpu().numpy()
@@ -125,7 +162,7 @@ def model_evaluation(mode, model_conv, input_data_loc, input_shape, use_gpu, nam
         else:
             inputs = Variable(img)
         bs, ncrops, c, h, w = inputs.data.size()
-        output = model_conv(inputs.view(-1, c, h, w)) # fuse batch size and ncrops
+        output = model_conv(inputs.view(-1, c, h, w),2) # fuse batch size and ncrops
         if type(output) == tuple:
             output, _ = output
         else:

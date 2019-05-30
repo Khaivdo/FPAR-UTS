@@ -8,7 +8,7 @@ import torch.nn.init as init
 import numpy as np
 
 from tars.nasnet import nasnetalarge
-from tars.resnext import resnext101_32x4d, resnext101_64x4d
+#from tars.resnext import resnext101_32x4d, resnext101_64x4d
 from tars.inceptionresnetv2 import inceptionresnetv2
 from tars.inceptionv4 import inceptionv4
 from tars.bninception import bninception

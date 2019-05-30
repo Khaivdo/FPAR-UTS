@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
+import torch
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
@@ -98,7 +99,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, num_classes1=0, num_classes2=0, zero_init_residual=False):
+    def __init__(self, block, layers, num_classes=1000, num_classes1=10, num_classes2=10, zero_init_residual=False):
         super(ResNet, self).__init__()
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
@@ -111,9 +112,10 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
-        self.fc1 = nn.Linear(512 * block.expansion, num_classes1)
-        self.fc2 = nn.Linear(512 * block.expansion, num_classes2)
+        self.fc = nn.Linear(512 * block.expansion, 1)
+        self.fc20 = nn.Linear(512 * block.expansion, 1)
+        self.fc1 = nn.Linear(512 * block.expansion, 7)
+        self.fc2 = nn.Linear(512 * block.expansion, 8)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -148,22 +150,41 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
     
-    def group(self, x, class_):
+    def group(self, x, pred_class,true_class):
+        """
+        
+        """
  
         x = self.layer3(x)
         x = self.layer4(x)
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        
-        if class_==1:
-            x = self.fc1(x)
-        else:
-            x = self.fc2(x)
+        if true_class==0:
+                x = self.fc1(x)
+                sm = nn.Sigmoid()
+                x = sm(x)
+        elif true_class==1:
+                x = self.fc2(x)
+                sm = nn.Sigmoid()
+                x = sm(x)
+        else:    
+            
+            if (pred_class<.5):
+                x = self.fc1(x)
+                sm = nn.Sigmoid()
+                x = sm(x)
+            else:
+                x = self.fc2(x)
+                sm = nn.Sigmoid()
+                x = sm(x)
 
         return x
     
-    def forward(self, x):
+    def forward(self, x,true_class):
+        """
+        Get features from first few layers then pass them to two different groups
+        """
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -173,15 +194,23 @@ class ResNet(nn.Module):
         x1 = self.layer2(x)
         x = self.layer3(x1)
         x = self.layer4(x)
-
+        print (x.shape)
         x = self.avgpool(x)
+        print (x.shape)
         x = x.view(x.size(0), -1)
-        x = self.fc(x)
+        print (x.shape)
+        pred_class = self.fc20(x)
+        print (pred_class.shape)
+        sm = nn.Sigmoid()
+        pred_class = sm(pred_class)
         
         ### class_ = max of x
+        #values, class_ = torch.max(x, 0)
+        #x = torch.stack(x)
+#        values ,pred_class = torch.max(x, 0)
         
-        g = self.group(x1, class_)
-        return x, g
+        g = self.group(x1, pred_class,true_class)
+        return pred_class, g
         
 
 
@@ -216,8 +245,8 @@ def resnet50(pretrained=False, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    #if pretrained:
+     #   model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
 
