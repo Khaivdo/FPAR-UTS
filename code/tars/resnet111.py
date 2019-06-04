@@ -95,11 +95,82 @@ class Bottleneck(nn.Module):
         out = self.relu(out)
 
         return out
+class Second_branch(nn.Module):
+    expansion = 4
 
+    def __init__(self, block, layers, num_classes=1000, num_classes1=10, num_classes2=10, zero_init_residual=False):
+        super(Second_branch, self).__init__()
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc20 = nn.Linear(512 * block.expansion, 1)
+        self.fc1 = nn.Linear(512 * block.expansion, 8)
+        self.fc2 = nn.Linear(512 * block.expansion, 7)
+        
+        
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        # Zero-initialize the last BN in each residual branch,
+        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
+        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        if zero_init_residual:
+            for m in self.modules():
+                if isinstance(m, Bottleneck):
+                    nn.init.constant_(m.bn3.weight, 0)
+                elif isinstance(m, BasicBlock):
+                    nn.init.constant_(m.bn2.weight, 0)
+
+    def _make_layer(self, block, planes, blocks, stride=1):
+        downsample = None
+        if stride != 1 or self.inplanes != planes * block.expansion:
+            downsample = nn.Sequential(
+                conv1x1(self.inplanes, planes * block.expansion, stride),
+                nn.BatchNorm2d(planes * block.expansion),
+            )
+
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample))
+        self.inplanes = planes * block.expansion
+        for _ in range(1, blocks):
+            layers.append(block(self.inplanes, planes))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x, pred_class,true_class):
+            x = self.layer3(x)
+            x = self.layer4(x)
+    
+            x = self.avgpool(x)
+            x = x.view(x.size(0), -1)
+            if true_class==0:
+                    x = self.fc1(x)
+                    sm = nn.Sigmoid()
+                    out = sm(x)
+            elif true_class==1:
+                    x = self.fc2(x)
+                    sm = nn.Sigmoid()
+                    out = sm(x)
+            else:    
+                
+                if (pred_class<.5):
+                    x = self.fc1(x)
+                    sm = nn.Sigmoid()
+                    out = sm(x)
+                else:
+                    x = self.fc2(x)
+                    sm = nn.Sigmoid()
+                    out = sm(x)
+    
+            return out
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1, num_classes1=10, num_classes2=10, zero_init_residual=False):
+    def __init__(self, block, layers, num_classes=1000, num_classes1=10, num_classes2=10, zero_init_residual=False):
         super(ResNet, self).__init__()
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
@@ -112,10 +183,8 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
-        self.fc20 = nn.Linear(512 * block.expansion, 1)
-        self.fc1 = nn.Linear(512 * block.expansion, 8)
-        self.fc2 = nn.Linear(512 * block.expansion, 7)
+        self.fc = nn.Linear(512 * block.expansion, 1)
+        self.Second_branch_ =Second_branch(block, [3, 4, 6, 3])
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -150,36 +219,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
     
-    def group(self, x, pred_class,true_class):
-        """
-        
-        """
- 
-        x = self.layer3(x)
-        x = self.layer4(x)
-
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        if true_class==0:
-                x = self.fc1(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
-        elif true_class==1:
-                x = self.fc2(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
-        else:    
-            
-            if (pred_class<.5):
-                x = self.fc1(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
-            else:
-                x = self.fc2(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
-
-        return x
+    
     
     def forward(self, x,true_class):
         """
@@ -209,7 +249,7 @@ class ResNet(nn.Module):
         #x = torch.stack(x)
 #        values ,pred_class = torch.max(x, 0)
         
-        g = self.group(x1, pred_class,true_class)
+        g = self.Second_branch_(x1, pred_class,true_class)
         return pred_class, g
         
 

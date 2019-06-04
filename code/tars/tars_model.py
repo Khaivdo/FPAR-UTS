@@ -12,7 +12,7 @@ from tars.nasnet import nasnetalarge
 from tars.inceptionresnetv2 import inceptionresnetv2
 from tars.inceptionv4 import inceptionv4
 from tars.bninception import bninception
-from tars.resnet import resnet50
+from tars.resnet import *
 
 """
 resnet18, resnet34, resnet50, resnet101, resnet152

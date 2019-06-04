@@ -102,6 +102,7 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
                 loss1 = criterion1(outputs1, labels1)
                 loss2 = criterion(outputs2, labels2)
                 loss = loss1+loss2
+                loss.reshape(1)
                 # backward + optimize only if in training phase
                 if phase == 'train':
 #                    optimizer.zero_grad()
@@ -111,7 +112,13 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
                 # statistics
                 running_loss += loss.item()
                 running_corrects += torch.sum(preds == labels2.data)
-            running_loss_ = running_loss.cpu().numpy()
+                
+            # Added these 2 lines to fix "AttributeError: 'float' object has no attribute 'cpu'"
+#            if isinstance(running_loss, float): return np.array(running_loss)
+#            if isinstance(running_corrects, float): return np.array(running_corrects)
+            
+            
+            running_loss_ = running_loss
             epoch_loss = running_loss_ / float(dataset_sizes[phase])
             running_corrects_ = running_corrects.cpu().numpy()
             epoch_acc = running_corrects_ / float(dataset_sizes[phase])
