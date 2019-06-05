@@ -56,7 +56,8 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
     since = time.time()
 
     best_model_wts = model.state_dict()
-    best_acc = 0.0
+    best_acc1 = 0.0
+    best_acc2 = 0.0
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -71,8 +72,8 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
                 model.train(False)  # Set model to evaluate mode
 
             running_loss = 0.0
-            running_corrects = 0
-            t=0
+            running_corrects1 = 0
+            running_corrects2 = 0
 
             # Iterate over data.
             for data in tqdm(dataloaders[phase]):
@@ -87,6 +88,7 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
                     inputs = Variable(inputs.cuda())
                     labels1 = Variable(labels1.type(torch.FloatTensor).cuda())
                     labels2 = Variable(labels2.cuda())
+#                    labels1 = Variable(labels1.cuda())
                 else:
                     inputs, labels1, labels2  = Variable(inputs), Variable(labels1), Variable(labels2)
 
@@ -95,13 +97,22 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
 
                 # forward
                 outputs1,outputs2 = model(inputs,labels1)
-               
+#                print (outputs1)
+#                print (labels1)
+#                print ("&&&&&&&&&&&&&&&&&&&&&7777")
+                
+                
                 
                 if type(outputs1) == tuple:
                     outputs1, _ = outputs1
                 if type(outputs2) == tuple:
                     outputs2, _ = outputs2
-                _, preds = torch.max(outputs2.data, 1)
+                _, preds1 = torch.max(outputs1.data, 1)
+                _, preds2 = torch.max(outputs2.data, 1)
+                t = Variable(torch.FloatTensor([0.5]))
+                ind = (preds1 > t.cuda()).float()*1
+                
+                
                 loss1 = criterion1(outputs1, labels1)
                 loss2 = criterion(outputs2, labels2)
                 loss = loss1+loss2
@@ -114,7 +125,8 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
 
                 # statistics
                 running_loss += loss.item()
-                running_corrects += torch.sum(preds == labels2.data)
+                running_corrects1 += torch.sum(ind.type(torch.FloatTensor).cuda() == labels1.data)
+                running_corrects2 += torch.sum(preds2 == labels2.data)
                 
             # Added these 2 lines to fix "AttributeError: 'float' object has no attribute 'cpu'"
 #            if isinstance(running_loss, float): return np.array(running_loss)
@@ -123,15 +135,18 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
             
             running_loss_ = running_loss
             epoch_loss = running_loss_ / float(dataset_sizes[phase])
-            running_corrects_ = running_corrects.cpu().numpy()
-            epoch_acc = running_corrects_ / float(dataset_sizes[phase])
+            running_corrects_1 = running_corrects1.cpu().numpy()
+            epoch_acc_labels1 = running_corrects_1 / float(dataset_sizes[phase])
+            running_corrects_2 = running_corrects2.cpu().numpy()
+            epoch_acc_labels2 = running_corrects_2 / float(dataset_sizes[phase])
 
-            print('{} Loss: {:.4f} Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc))
+#            print('{} Loss: {:.4f} Group_Acc: {:.4f}  Activity_Acc: {:.4f}'.format(
+#                phase, epoch_loss, epoch_acc_labels1, epoch_acc_labels2))
 
             # deep copy the model
-            if phase == 'val' and epoch_acc > best_acc:
-                best_acc = epoch_acc
+            if phase == 'val' and epoch_acc_labels1 > best_acc1 and epoch_acc_labels2 > best_acc2:
+                best_acc1 = epoch_acc_labels1
+                best_acc2 = epoch_acc_labels2
                 best_model_wts = model.state_dict()
 
         print()
@@ -139,7 +154,8 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
     time_elapsed = time.time() - since
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
-    print('Best val Acc: {:4f}'.format(best_acc))
+    print('Best val Group_Acc: {:4f}'.format(best_acc1))
+    print('Best val Activity_Acc: {:4f}'.format(best_acc2))
 
     # load best model weights
     model.load_state_dict(best_model_wts)

@@ -13,15 +13,15 @@ import os
 import argparse
 
 from tars.tars_data_loaders import *
-from tars.tars_training import *
+from tars.tars_training_v3 import *
 from tars.tars_model import *
 
 parser = argparse.ArgumentParser(description='Training a pytorch model to classify different plants')
 parser.add_argument('-idl', '--input_data_loc', help='', default='data')
 parser.add_argument('-mo', '--model_name', default="resnet50")
-parser.add_argument('-f', '--freeze_layers', default=True, action='store_false', help='Bool type')
+parser.add_argument('-f', '--freeze_layers', default=False, action='store_false', help='Bool type')
 parser.add_argument('-fi', '--freeze_initial_layers', default=True, action='store_false', help='Bool type')
-parser.add_argument('-ep', '--epochs', default=30, type=int)
+parser.add_argument('-ep', '--epochs', default=50, type=int)
 parser.add_argument('-b', '--batch_size', default=1, type=int)
 parser.add_argument('-is', '--input_shape', default=224, type=int)
 parser.add_argument('-sl', '--save_loc', default="models/" )

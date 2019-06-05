@@ -150,7 +150,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
     
-    def group(self, x, pred_class,true_class):
+    def group1(self, x, pred_class,true_class):
         """
         
         """
@@ -160,24 +160,26 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        if true_class==0:
-                x = self.fc1(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
-        elif true_class==1:
-                x = self.fc2(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
-        else:    
-            
-            if (pred_class<.5):
-                x = self.fc1(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
-            else:
-                x = self.fc2(x)
-                sm = nn.Sigmoid()
-                x = sm(x)
+        x = self.fc1(x)
+        sm = nn.Sigmoid()
+        x = sm(x)
+        
+
+        return x
+    def group2(self, x, pred_class,true_class):
+        """
+        
+        """
+ 
+        x = self.layer3(x)
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc2(x)
+        sm = nn.Sigmoid()
+        x = sm(x)
+        
 
         return x
     
@@ -185,6 +187,7 @@ class ResNet(nn.Module):
         """
         Get features from first few layers then pass them to two different groups
         """
+#        print (x.shape)
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -203,13 +206,25 @@ class ResNet(nn.Module):
 #        print (pred_class.shape)
         sm = nn.Sigmoid()
         pred_class = sm(pred_class)
-        
+#        values1 ,pred_class1 = torch.max(pred_class, 1)
         ### class_ = max of x
         #values, class_ = torch.max(x, 0)
         #x = torch.stack(x)
 #        values ,pred_class = torch.max(x, 0)
-        
-        g = self.group(x1, pred_class,true_class)
+        if true_class==0:
+                g=self.group1(x1, pred_class,true_class)
+        elif true_class==1:
+                g=self.group2(x1, pred_class,true_class)
+        else:    
+            
+            if (pred_class<.5):
+               g=self.group1(x1, pred_class,true_class)
+            else:
+                g=self.group2(x1, pred_class,true_class)
+                
+#        values2 ,pred_class2 = torch.max(g, 1)
+#        print (pred_class2)
+#        g = self.group(x1, pred_class,true_class)
         return pred_class, g
         
 
