@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(description='s3df demo')
 parser.add_argument('--save_dir', type=str, default='tmp/',
                     help='Directory for detect result')
 parser.add_argument('--model', type=str,
-                    default='weights/s3fd.pth', help='trained model')
+                    default='./weights/s3fd.pth', help='trained model')
 parser.add_argument('--thresh', default=0.6, type=float,
                     help='Final confidence threshold')
 args = parser.parse_args()
@@ -72,15 +72,22 @@ def detect(net, img_path, thresh):
                           img.shape[1], img.shape[0]])
 
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+    result_image = img.copy()
 
     for i in range(detections.size(1)):
         j = 0
         while detections[0, i, j, 0] >= thresh:
             score = detections[0, i, j, 0]
             pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
+            print(type(pt[1]))
             left_up, right_bottom = (pt[0], pt[1]), (pt[2], pt[3])
             j += 1
-            cv2.rectangle(img, left_up, right_bottom, (0, 0, 255), 2)
+            #cv2.rectangle(img, left_up, right_bottom, (0, 0, 255), 20)
+            sub_face = img[int(pt[1]):int(pt[3]), int(pt[0]):int(pt[2])]
+            sub_face = cv2.GaussianBlur(sub_face, (23, 23), 30)
+            #merge
+            result_image[int(pt[1]):int(pt[1]+sub_face.shape[0]), int(pt[0]):int(pt[0]+sub_face.shape[1])] = sub_face
+            #face_file_name = "./blurredFace.jpg"
             conf = "{:.3f}".format(score)
             point = (int(left_up[0]), int(left_up[1] - 5))
             #cv2.putText(img, conf, point, cv2.FONT_HERSHEY_COMPLEX,
@@ -89,12 +96,12 @@ def detect(net, img_path, thresh):
     t2 = time.time()
     print('detect:{} timer:{}'.format(img_path, t2 - t1))
 
-    cv2.imwrite(os.path.join(args.save_dir, os.path.basename(img_path)), img)
+    cv2.imwrite(os.path.join(args.save_dir, os.path.basename(img_path)), result_image)#img)
 
 
 if __name__ == '__main__':
     net = build_s3fd('test', cfg.NUM_CLASSES)
-    net.load_state_dict(torch.load(args.model))
+    net.load_state_dict(torch.load(args.model, map_location='cpu'))
     net.eval()
 
     if use_cuda:
