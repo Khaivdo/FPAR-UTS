@@ -38,27 +38,32 @@ dataloaders, dataset_sizes, class_names = generate_data(args.input_data_loc, arg
 print(class_names)
 
 print("[Load the model...]")
+
 # Parameters of newly constructed modules have requires_grad=True by default
 print("Loading model using class: {}, use_gpu: {}, freeze_layers: {}, freeze_initial_layers: {}, name_of_model: {}".format(len(class_names), args.use_gpu, args.freeze_layers, args.freeze_initial_layers, args.model_name))
 model_conv = all_pretrained_models(len(class_names), use_gpu=args.use_gpu, freeze_layers=args.freeze_layers, freeze_initial_layers= args.freeze_initial_layers, name=args.model_name)
 if args.use_parallel:
     print("[Using all the available GPUs]")
     model_conv = nn.DataParallel(model_conv, device_ids=[0])
-
+#model_conv.load_state_dict(torch.load(model_save_loc))
 print("[Using CrossEntropyLoss...]")
 criterion = nn.CrossEntropyLoss()
+#criterion = nn.BCELoss()
 criterion1 = nn.BCELoss()
 print("[Using small learning rate with momentum...]")
-optimizer_conv = optim.SGD(list(filter(lambda p: p.requires_grad, model_conv.parameters())), lr=0.001, momentum=0.9)
+lr =0.018
+step_size=7
+optimizer_conv = optim.Adam(list(filter(lambda p: p.requires_grad, model_conv.parameters())), lr)
 
 print("[Creating Learning rate scheduler...]")
-exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1)
+exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size, gamma=0.1)
 
+print("[Learning rate: " + str(lr))
+print("Step_size: " + str(step_size))
 print("[Training the model begun ....]")
 print(args.mixup, args.mixup_alpha)
 model_ft = train_model(model_conv, dataloaders, dataset_sizes, criterion,criterion1, optimizer_conv, exp_lr_scheduler, args.use_gpu,
                        num_epochs=args.epochs, mixup = args.mixup, alpha = args.mixup_alpha)
-
+model_save_loc = args.save_loc+args.model_name+"_"+str(args.freeze_layers)+"_freeze"+"_"+str(args.freeze_initial_layers)+"_freeze_initial_layer"+"_"+str(lr)+"learing_rate"+".pth"
 print("[Save the best model]")
-model_save_loc = args.save_loc+args.model_name+"_"+str(args.freeze_layers)+"_freeze"+"_"+str(args.freeze_initial_layers)+"_freeze_initial_layer"+".pth"
 torch.save(model_ft.state_dict(), model_save_loc)

@@ -1,6 +1,6 @@
 """ training functions
 """
-import argparse
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -18,72 +18,13 @@ import pandas as pd
 
 from tars.utils import *
 from tars.tars_data_loaders import *
-
-import matplotlib.pyplot as plt
-
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
-from sklearn.utils.multiclass import unique_labels
-
-class_names = ['11_chat', '12_clean', '13_drink', '14_dryer', '15_microwave', '16_print', '17_walk', '18_shake', '21_machine', '22_mobile', '23_paper', '24_read', '25_staple', '26_take', '27_typeset']
-def plot_confusion_matrix(y_true, y_pred, classes,
-                          normalize=False,
-                          title=None,
-                          cmap=plt.cm.Blues):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
-    """
-    if not title:
-        if normalize:
-            title = 'Normalized confusion matrix'
-        else:
-            title = 'Confusion matrix, without normalization'
-
-    # Compute confusion matrix
-    cm = confusion_matrix(y_true, y_pred)
-    # Only use the labels that appear in the data
-    classes = classes[unique_labels(y_true, y_pred)]
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-        print("Normalized confusion matrix")
-    else:
-        print('Confusion matrix, without normalization')
-
-    print(cm)
-
-    fig, ax = plt.subplots()
-    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
-    ax.figure.colorbar(im, ax=ax)
-    # We want to show all ticks...
-    ax.set(xticks=np.arange(cm.shape[1]),
-           yticks=np.arange(cm.shape[0]),
-           # ... and label them with the respective list entries
-           xticklabels=classes, yticklabels=classes,
-           title=title,
-           ylabel='True label',
-           xlabel='Predicted label')
-
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-             rotation_mode="anchor")
-
-    # Loop over data dimensions and create text annotations.
-    fmt = '.2f' if normalize else 'd'
-    thresh = cm.max() / 2.
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, format(cm[i, j], fmt),
-                    ha="center", va="center",
-                    color="white" if cm[i, j] > thresh else "black")
-    fig.tight_layout()
-    return ax
-
 def assigned_label(labels):
     label1= torch.tensor([0,1])
-    label2= labels
+    label2_1= labels
+    label2_2= labels
     labels1= labels.clone()
-    labels2= labels.clone()
+    labels2_1= labels.clone()
+    labels2_2= labels.clone()
 #    if  labels==0:
 #        lable1= torch.tensor([0])
 #    else:
@@ -94,46 +35,49 @@ def assigned_label(labels):
         labels1=torch.tensor([1])
     
     
-    if (labels== 0  or labels== 4):
-        labels2=torch.tensor([0])
-    elif (labels== 1  or labels== 6):
-        labels2=torch.tensor([1])
-    elif (labels== 2  or labels== 7):
-        labels2=torch.tensor([2])
-    elif (labels== 3  or labels== 9):
-        labels2=torch.tensor([3])
-    elif (labels== 5  or labels== 11):
-        labels2=torch.tensor([4])
-    elif (labels== 8  or labels== 12):
-        labels2=torch.tensor([5])
-    elif (labels== 10  or labels== 13):
-        labels2=torch.tensor([6])
+    if (labels== 0 ):
+        labels2_1[0]=torch.tensor([0])
+    elif (labels== 1 ):
+        labels2_1[1]=torch.tensor([1])
+    elif (labels== 2 ):
+        labels2_1[2]=torch.tensor([2])
+    elif (labels== 3 ):
+        labels2_1[3]=torch.tensor([3])
+    elif (labels== 5 ):
+        labels2_1[4]=torch.tensor([4])
+    elif (labels== 8 ):
+        labels2_1[5]=torch.tensor([5])
+    elif (labels== 10 ):
+        labels2_1[6]=torch.tensor([6])
     elif (labels== 14):
-        labels2=torch.tensor([7])
-    return labels1, labels2
+        labels2_1[7]=torch.tensor([7])
+    
+    elif (labels== 4):
+        labels2_2[0]=torch.tensor([0])
+    elif (labels== 6):
+        labels2_2[1]=torch.tensor([1])
+    elif (labels== 7):
+        labels2_2[2]=torch.tensor([2])
+    elif (labels== 9):
+        labels2_2[3]=torch.tensor([3])
+    elif (labels== 11):
+        labels2_2[4]=torch.tensor([4])
+    elif (labels== 12):
+        labels2_2[5]=torch.tensor([5])
+    elif (labels== 13):
+        labels2_2[6]=torch.tensor([6])
+     
+    
+    return labels1, labels2_1, labels2_2
     
 def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimizer, scheduler, use_gpu, num_epochs=25, mixup = False, alpha = 0.1):
     print("MIXUP".format(mixup))
     since = time.time()
-    parser = argparse.ArgumentParser(description='Training a pytorch model to classify different plants')
-    parser.add_argument('-idl', '--input_data_loc', help='', default='data')
-    parser.add_argument('-mo', '--model_name', default="resnet50")
-    parser.add_argument('-f', '--freeze_layers', default=False, action='store_false', help='Bool type')
-    parser.add_argument('-fi', '--freeze_initial_layers', default=True, action='store_false', help='Bool type')
-    parser.add_argument('-ep', '--epochs', default=50, type=int)
-    parser.add_argument('-b', '--batch_size', default=1, type=int)
-    parser.add_argument('-is', '--input_shape', default=224, type=int)
-    parser.add_argument('-sl', '--save_loc', default="models/" )
-    parser.add_argument("-g", '--use_gpu', default=True, action='store_false', help='Bool type gpu')
-    parser.add_argument("-p", '--use_parallel', default=True, action='store_false', help='Bool type to use_parallel')
-    parser.add_argument("-mx", '--mixup', default=True, action='store_true' ,help='Use mixup data augementation')
-    parser.add_argument("-mxal", '--mixup_alpha', default=0.1, type = float, help='Alpha to be used in mixup agumentation')
-    args = parser.parse_args()
-    lr = 0.02
 
     best_model_wts = model.state_dict()
     best_acc1 = 0.0
-    best_acc2 = 0.0
+    best_acc2_1 = 0.0
+    best_acc2_2 = 0.0
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -149,14 +93,14 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
 
             running_loss = 0.0
             running_corrects1 = 0
-            running_corrects2 = 0
+            running_corrects2_1 = 0
+            running_corrects2_2 = 0
 
             # Iterate over data.
             for data in tqdm(dataloaders[phase]):
                 # get the inputs
                 inputs, labels = data
-#                true_class[i]=labels
-                labels1, labels2 = assigned_label(labels)
+                labels1, labels2_1, labels2_2= assigned_label(labels)
                 #augementation using mixup
                 if phase == 'train' and mixup:
                     inputs = mixup_batch(inputs, alpha)
@@ -164,11 +108,11 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
                 if use_gpu:
                     inputs = Variable(inputs.cuda())
                     labels1 = Variable(labels1.type(torch.FloatTensor).cuda())
-                    labels2 = Variable(labels2.cuda())
-                    labels = Variable(labels.cuda())
+                    labels2_1 = Variable(labels2_1.cuda())
+                    labels2_2 = Variable(labels2_2.cuda())
 #                    labels1 = Variable(labels1.cuda())
                 else:
-                    inputs, labels1, labels,  = Variable(inputs), Variable(labels1), Variable(labels2), Variable(labels)
+                    inputs, labels1, labels2_1, labels2_2  = Variable(inputs), Variable(labels1), Variable(labels2_1), Variable(labels2_2)
 
                 # zero the parameter gradients
 #                optimizer.zero_grad()
@@ -195,22 +139,38 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
 #                ind = (preds1 > t.cuda()).float()*1
                 
                 
-                loss1 = criterion1(outputs1, labels1)
-                loss2 = criterion(outputs2, labels2)
-#                print (loss1)
-#                print (loss2)
-                loss = loss1+loss2
-                loss.reshape(1)
+                
                 # backward + optimize only if in training phase
                 if phase == 'train':
+                    
+                    loss1 = criterion1(outputs1, labels1)
+                    if labels1 == torch.tensor([0]):
+                        loss2_1 = criterion(outputs2, labels2_1)
+                    elif labels1 == torch.tensor([1])
+                        loss2_2 = criterion(outputs2, labels2_2)
+                    loss = loss1 +loss2_1 +loss2_2
+                    loss.reshape(1)
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
-
+                    
+                if phase == 'val':
+                    
+                    if preds1 == torch.tensor([0]):
+                        loss2_1 = criterion(outputs2, labels2_1)
+                    elif preds1 == torch.tensor([1])
+                        loss2_2 = criterion(outputs2, labels2_2)
+                    
+                    loss1 = criterion1(outputs1, labels1)
+                    
+                    loss = loss1 +loss2_1 +loss2_2
+                    loss.reshape(1)
+                   
                 # statistics
                 running_loss += loss.item()
                 running_corrects1 += torch.sum(preds1.type(torch.FloatTensor).cuda() == labels1.data)
-                running_corrects2 += torch.sum(preds2.type(torch.LongTensor).cuda() == labels2.data)
+                running_corrects2_1 += torch.sum(preds2 == labels2_1.data)
+                running_corrects2_2 += torch.sum(preds2 == labels2_2.data)
                 
             # Added these 2 lines to fix "AttributeError: 'float' object has no attribute 'cpu'"
 #            if isinstance(running_loss, float): return np.array(running_loss)
@@ -221,19 +181,20 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
             epoch_loss = running_loss_ / float(dataset_sizes[phase])
             running_corrects_1 = running_corrects1.cpu().numpy()
             epoch_acc_labels1 = running_corrects_1 / float(dataset_sizes[phase])
-            running_corrects_2 = running_corrects2.cpu().numpy()
-            epoch_acc_labels2 = running_corrects_2 / float(dataset_sizes[phase])
+            running_corrects2_1 = running_corrects2_1.cpu().numpy()
+            epoch_acc_labels2_1 = running_corrects2_1 / float(dataset_sizes[phase])
+            running_corrects2_2 = running_corrects2_2.cpu().numpy()
+            epoch_acc_labels2_2 = running_corrects2_2 / float(dataset_sizes[phase])
 
             print('{} Loss: {:.4f} Group_Acc: {:.4f}  Activity_Acc: {:.4f}'.format(
-                phase, epoch_loss, epoch_acc_labels1, epoch_acc_labels2))
+                phase, epoch_loss, epoch_acc_labels1, epoch_acc_labels2_1, epoch_acc_labels2_2))
+
             # deep copy the model
-            if phase == 'val' and epoch_acc_labels2 > best_acc2:
+            if phase == 'val' and epoch_acc_labels1 > best_acc1 and epoch_acc_labels2_1 > best_acc2_1 and epoch_acc_labels2_2 > best_acc2_2:
                 best_acc1 = epoch_acc_labels1
-                best_acc2 = epoch_acc_labels2
+                best_acc2_1 = epoch_acc_labels2_1
+                best_acc2_2 = epoch_acc_labels2_2
                 best_model_wts = model.state_dict()
-                model_save_loc = args.save_loc+args.model_name+"_"+str(args.freeze_layers)+"_freeze"+"_"+str(args.freeze_initial_layers)+"_freeze_initial_layer"+"_"+str(lr)+"learing_rate"+".pth"
-                print("[Save the best model]")
-                torch.save(model.state_dict(), model_save_loc)
 
         print()
 
@@ -241,12 +202,11 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
     print('Training complete in {:.0f}m {:.0f}s'.format(
         time_elapsed // 60, time_elapsed % 60))
     print('Best val Group_Acc: {:4f}'.format(best_acc1))
-    print('Best val Activity_Acc: {:4f}'.format(best_acc2))
+    print('Best val Label2_1_Activity_Acc: {:4f}'.format(best_acc2_1))
+    print('Best val Label2_2_Activity_Acc: {:4f}'.format(best_acc2_2))
 
-    
     # load best model weights
     model.load_state_dict(best_model_wts)
-    
     return model
 
 def model_evaluation(mode, model_conv, input_data_loc, input_shape, use_gpu, name):

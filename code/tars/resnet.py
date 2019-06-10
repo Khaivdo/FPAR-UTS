@@ -106,6 +106,7 @@ class ResNet(nn.Module):
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
+        self.drop = nn.Dropout(p=0.5)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
@@ -116,6 +117,8 @@ class ResNet(nn.Module):
         self.fc20 = nn.Linear(512 * block.expansion, 1)
         self.fc1 = nn.Linear(512 * block.expansion, 8)
         self.fc2 = nn.Linear(512 * block.expansion, 7)
+        self.fc11 = nn.Linear(512 * block.expansion, 15)
+        self.fc22 = nn.Linear(512 * block.expansion, 15)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -150,38 +153,41 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
     
-    def group1(self, x, pred_class,true_class):
+    def group1(self, x,x2):
         """
         
         """
  
         x = self.layer3(x)
+        x = self.drop(x)
         x = self.layer4(x)
-
+        x=x+x2
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
-        sm = nn.Sigmoid()
-        x = sm(x)
+        sm = nn.Softmax()
+        out = sm(x)
         
 
-        return x
-    def group2(self, x, pred_class,true_class):
+        return out
+    def group2(self, x,x2):
         """
         
         """
  
         x = self.layer3(x)
+        x = self.drop(x)
         x = self.layer4(x)
+        x=x+x2
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc2(x)
-        sm = nn.Sigmoid()
-        x = sm(x)
+        sm = nn.Softmax()
+        out = sm(x)
         
 
-        return x
+        return out
     
     def forward(self, x,true_class):
         """
@@ -194,15 +200,17 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
+        x = self.drop(x)
         x1 = self.layer2(x)
         x = self.layer3(x1)
-        x = self.layer4(x)
+        x = self.drop(x)
+        x2 = self.layer4(x)
 #        print (x.shape)
-        x = self.avgpool(x)
+        x3 = self.avgpool(x2)
 #        print (x.shape)
-        x = x.view(x.size(0), -1)
+        x3 = x3.view(x3.size(0), -1)
 #        print (x.shape)
-        pred_class = self.fc20(x)
+        pred_class = self.fc20(x3)
 #        print (pred_class.shape)
         sm = nn.Sigmoid()
         pred_class = sm(pred_class)
@@ -212,15 +220,15 @@ class ResNet(nn.Module):
         #x = torch.stack(x)
 #        values ,pred_class = torch.max(x, 0)
         if true_class==0:
-                g=self.group1(x1, pred_class,true_class)
+                g=self.group1(x1,x2)
         elif true_class==1:
-                g=self.group2(x1, pred_class,true_class)
+                g=self.group2(x1,x2)
         else:    
             
             if (pred_class<.5):
-               g=self.group1(x1, pred_class,true_class)
+               g=self.group1(x1,x2)
             else:
-                g=self.group2(x1, pred_class,true_class)
+                g=self.group2(x1,x2)
                 
 #        values2 ,pred_class2 = torch.max(g, 1)
 #        print (pred_class2)
