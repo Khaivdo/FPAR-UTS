@@ -2,8 +2,6 @@
 
 import os
 import argparse
-import torch
-from data.config import cfg
 from generate import build_net, generate_images
 
 parser = argparse.ArgumentParser(description='s3df demo')
@@ -21,7 +19,6 @@ if not os.path.exists(args.save_dir):
 
 
 if __name__ == '__main__':
-    net = build_net(args.model, cfg.NUM_CLASSES)
-
+    net = build_net(args.model)
     generate_images(net, args.save_dir, args.thresh)
 

@@ -51,6 +51,8 @@ def detect(net, img_path, thresh, save_dir):
     x = Variable(torch.from_numpy(x).unsqueeze(0))
     if use_cuda:
         x = x.cuda()
+    
+    print('detecting: {}'.format(img_path))
     t1 = time.time()
     y = net(x)
     detections = y.data
@@ -58,34 +60,39 @@ def detect(net, img_path, thresh, save_dir):
                           img.shape[1], img.shape[0]])
 
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    result_image = img.copy()
-    
+    result_image = blur_frame(img, detections, thresh, scale)
+
+    t2 = time.time()
+    print('done. timer: {}'.format(t2 - t1))
+    cv2.imwrite(os.path.join(save_dir, os.path.basename(img_path)), result_image)#img)
+
+
+def blur_frame(frame, detections, thresh, scale):
+    result_image = frame.copy()
+
     for i in range(detections.size(1)):
         j = 0
         while detections[0, i, j, 0] >= thresh:
             score = detections[0, i, j, 0]
             pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
-            left_up, right_bottom = (pt[0], pt[1]), (pt[2], pt[3])
+            #left_up, right_bottom = (pt[0], pt[1]), (pt[2], pt[3])
             j += 1
             #cv2.rectangle(img, left_up, right_bottom, (0, 0, 255), 20)
-            sub_face = img[int(pt[1]):int(pt[3]), int(pt[0]):int(pt[2])]
+            sub_face = frame[int(pt[1]):int(pt[3]), int(pt[0]):int(pt[2])]
             sub_face = cv2.GaussianBlur(sub_face, (23, 23), 30)
             #merge
             result_image[int(pt[1]):int(pt[1]+sub_face.shape[0]), int(pt[0]):int(pt[0]+sub_face.shape[1])] = sub_face
             #face_file_name = "./blurredFace.jpg"
-            conf = "{:.3f}".format(score)
-            point = (int(left_up[0]), int(left_up[1] - 5))
+            #conf = "{:.3f}".format(score)
+            #point = (int(left_up[0]), int(left_up[1] - 5))
             #cv2.putText(img, conf, point, cv2.FONT_HERSHEY_COMPLEX,
             #            0.6, (0, 255, 0), 1)
 
-    t2 = time.time()
-    print('detect:{} timer:{}'.format(img_path, t2 - t1))
-    cv2.imwrite(os.path.join(save_dir, os.path.basename(img_path)), result_image)#img)
+    return result_image
 
 
-
-def build_net(model, num_classes): 
-    net = build_s3fd('test', num_classes)
+def build_net(model): 
+    net = build_s3fd('test', cfg.NUM_CLASSES)
     #setting map_location to cpu will forcefully remap everything onto CPU
     net.load_state_dict(torch.load(model, map_location='cpu'))
     net.eval()
