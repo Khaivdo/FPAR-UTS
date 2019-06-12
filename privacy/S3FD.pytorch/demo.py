@@ -2,7 +2,7 @@
 
 import os
 import argparse
-from generate import build_net, generate_images
+from generate import build_net, generate_images, generate_video
 
 parser = argparse.ArgumentParser(description='s3df demo')
 parser.add_argument('--save_dir', type=str, default='tmp/',
@@ -21,4 +21,4 @@ if not os.path.exists(args.save_dir):
 if __name__ == '__main__':
     net = build_net(args.model)
     generate_images(net, args.save_dir, args.thresh)
-
+    #generate_video(net, './input/1_21_chat.MP4', args.thresh)

@@ -30,19 +30,16 @@ else:
     torch.set_default_tensor_type('torch.FloatTensor')
 
 
-def detect(net, img_path, thresh, save_dir):
-    #img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img = Image.open(img_path)
-    if img.mode == 'L':
-        img = img.convert('RGB')
+def to_pillow_img_arr(imgArr):
+    pillowImg = Image.fromarray(imgArr)
 
-    img = np.array(img)
-    height, width, _ = img.shape
-    max_im_shrink = np.sqrt(
-        1700 * 1200 / (img.shape[0] * img.shape[1]))
-    image = cv2.resize(img, None, None, fx=max_im_shrink,
-                      fy=max_im_shrink, interpolation=cv2.INTER_LINEAR)
-    #image = cv2.resize(img, (640, 640))
+    if pillowImg.mode == 'L':
+        pillowImg = pillowImg.convert('RGB')
+
+    return np.array(pillowImg)
+
+
+def create_tensor_module(image):
     x = to_chw_bgr(image)
     x = x.astype('float32')
     x -= cfg.img_mean
@@ -51,57 +48,66 @@ def detect(net, img_path, thresh, save_dir):
     x = Variable(torch.from_numpy(x).unsqueeze(0))
     if use_cuda:
         x = x.cuda()
+
+    return x
     
-    print('detecting: {}'.format(img_path))
-    t1 = time.time()
-    y = net(x)
-    detections = y.data
-    scale = torch.Tensor([img.shape[1], img.shape[0],
-                          img.shape[1], img.shape[0]])
 
-    img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    result_image = blur_frame(img, detections, thresh, scale)
-
-    t2 = time.time()
-    print('done. timer: {}'.format(t2 - t1))
-    cv2.imwrite(os.path.join(save_dir, os.path.basename(img_path)), result_image)#img)
-
-
-def blur_frame(frame, detections, thresh, scale):
-    result_image = frame.copy()
-
+def blur_image(image, detections, thresh, scale):
+    result_image = image.copy()
     for i in range(detections.size(1)):
         j = 0
         while detections[0, i, j, 0] >= thresh:
-            score = detections[0, i, j, 0]
-            pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
-            #left_up, right_bottom = (pt[0], pt[1]), (pt[2], pt[3])
+            bounding_box = (detections[0, i, j, 1:] * scale).cpu().numpy()
+            result_image = blur_detection(image, bounding_box)
             j += 1
-            #cv2.rectangle(img, left_up, right_bottom, (0, 0, 255), 20)
-            sub_face = frame[int(pt[1]):int(pt[3]), int(pt[0]):int(pt[2])]
-            sub_face = cv2.GaussianBlur(sub_face, (23, 23), 30)
-            #merge
-            result_image[int(pt[1]):int(pt[1]+sub_face.shape[0]), int(pt[0]):int(pt[0]+sub_face.shape[1])] = sub_face
-            #face_file_name = "./blurredFace.jpg"
-            #conf = "{:.3f}".format(score)
-            #point = (int(left_up[0]), int(left_up[1] - 5))
-            #cv2.putText(img, conf, point, cv2.FONT_HERSHEY_COMPLEX,
-            #            0.6, (0, 255, 0), 1)
 
+    return result_image
+    
+
+def blur_detection(image, bounding_box):
+    # not sure what pt stands for
+    pt = bounding_box
+    # get detected image area
+    image_area = image[int(pt[1]):int(pt[3]), int(pt[0]):int(pt[2])]
+    # blur the detected area
+    blurred_image = cv2.GaussianBlur(image_area, (23, 23), 30)
+    # apply the blur to the image
+    image[int(pt[1]):int(pt[1]+blurred_image.shape[0]), int(pt[0]):int(pt[0]+blurred_image.shape[1])] = blurred_image
+    return image
+
+
+def resize_image(cv2Img):
+    rgbImgArr = cv2.cvtColor(cv2Img, cv2.COLOR_BGR2RGB)
+    img = to_pillow_img_arr(rgbImgArr)
+    height, width, _ = img.shape
+    max_im_shrink = np.sqrt(
+        1700 * 1200 / (img.shape[0] * img.shape[1]))
+    resizedImg = cv2.resize(img, None, None, fx=max_im_shrink,
+                      fy=max_im_shrink, interpolation=cv2.INTER_LINEAR)
+    tensor_scale = torch.Tensor([img.shape[1], img.shape[0],
+                          img.shape[1], img.shape[0]])
+    return resizedImg, tensor_scale
+
+
+def detect(net, img, thresh):
+    image, scale = resize_image(img)
+    image_tensor = create_tensor_module(image)
+
+    result = net(image_tensor)
+    detections = result.data
+
+    result_image = blur_image(img, detections, thresh, scale)
     return result_image
 
 
-def build_net(model): 
-    net = build_s3fd('test', cfg.NUM_CLASSES)
-    #setting map_location to cpu will forcefully remap everything onto CPU
-    net.load_state_dict(torch.load(model, map_location='cpu'))
-    net.eval()
-
-    if use_cuda:
-        net.cuda()
-        cudnn.benckmark = True
-
-    return net
+def detect_from_path(net, save_dir, img_path, thresh):
+    print('detecting: {}'.format(img_path))
+    img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+    t1 = time.time()
+    result_image = detect(net, img, thresh)
+    cv2.imwrite(os.path.join(save_dir, os.path.basename(img_path)), result_image)
+    t2 = time.time()
+    print('done. timer: {}'.format(t2 - t1))
 
 
 def generate_images(net, save_dir, thresh):
@@ -110,4 +116,55 @@ def generate_images(net, save_dir, thresh):
                 for x in os.listdir(img_path) if x.endswith('jpg')]
 
     for path in img_list:
-        detect(net, path, thresh, save_dir)
+        detect_from_path(net, save_dir, path, thresh)
+
+
+def generate_video(net, vid_path, thresh):
+    frames = video_to_frames(vid_path)
+    for index, frame in enumerate(frames):
+        # frames[index] = detect(net, frame, thresh)
+        print(index)
+
+
+
+def build_net(model): 
+    net = build_s3fd('test', cfg.NUM_CLASSES)
+
+    if use_cuda:
+        state_dict = torch.load(model)
+        net.cuda()
+        cudnn.benckmark = True
+    else:
+        #setting map_location to cpu will forcefully remap everything onto CPU
+        state_dict = torch.load(model, map_location='cpu')
+
+    net.load_state_dict(state_dict)
+    net.eval()
+    return net
+
+
+def video_to_frames(vid_path, output_path):
+    # create video capture and get video info
+    vidcap, fps, size = get_video_capture(vid_path)
+    # create video writer
+    fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+    vidwrite = cv2.VideoWriter(output_path, fourcc, fps, size)
+   
+    frames = []
+    success = True
+    while success:
+        # Read video
+        success, frame = vidcap.read()
+        # Write video
+        vidwrite.write(frame)
+
+    vidcap.release()
+    vidwrite.release()
+    return frames
+
+
+def get_video_capture(vid_path):
+    vidcap = cv2.VideoCapture(vid_path)
+    fps = vidcap.get(cv2.CAP_PROP_FPS)
+    size = (int(vidcap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    return vidcap, fps, size
