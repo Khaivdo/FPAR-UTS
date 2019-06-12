@@ -1,15 +1,15 @@
 
-'chat' 0, 'clean' 1, 'drink' 2, 'dryer' 3, 'machine' 4, 'microwave' 5, 'mobile' 6, 'paper' 7, 'print' 8, 'read' 9, 'shake' 10, 'staple' 11, 'take' 12, 'typeset' 13, 'walk' 14
+'chat' 0, 'clean' 1, 'drink' 2, 'dryer' 3, 'machine' 4, 'microwave' 5, 'mobile' 6, 'paper' 7, 'print' 8, 'read' 9, 'shake' 10, 'staple' 11, 'take' 12, 'typeset' 13, 'walk' 14, 'wash' 15, 'whiteboard' 16, 'write' 17
 
-Group2:
-1) typeset-read-mobile 13-9-6
-1) machine-take 4-12
-1) staple-paper 11-7
-1) 
 
 Group1:
-2) chat-wave-shake 0-10
-2) whiteboard - clean 1
-2) print-walk 8-14
-2) dryer-wash 3
-2) drink - microwave 2-5
+1) chat-wave-shake 0-10
+1) whiteboard - clean 16-1
+1) print-walk 8-14
+1) dryer-wash 3-15
+1) drink - microwave 2-5
+
+Group2:
+2) typeset-read-mobile-write 13-9-6-17
+2) machine-take 4-12
+2) staple-paper 11-7

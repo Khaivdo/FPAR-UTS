@@ -51,8 +51,8 @@ criterion = nn.CrossEntropyLoss()
 #criterion = nn.BCELoss()
 criterion1 = nn.BCELoss()
 print("[Using small learning rate with momentum...]")
-lr =0.018
-step_size=7
+lr =0.01
+step_size=10
 optimizer_conv = optim.Adam(list(filter(lambda p: p.requires_grad, model_conv.parameters())), lr)
 
 print("[Creating Learning rate scheduler...]")

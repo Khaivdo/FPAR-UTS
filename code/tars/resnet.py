@@ -114,11 +114,12 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
-        self.fc20 = nn.Linear(512 * block.expansion, 1)
-        self.fc1 = nn.Linear(512 * block.expansion, 8)
-        self.fc2 = nn.Linear(512 * block.expansion, 7)
-        self.fc11 = nn.Linear(512 * block.expansion, 15)
-        self.fc22 = nn.Linear(512 * block.expansion, 15)
+        self.fc50 = nn.Linear(512 * block.expansion, 496)
+        self.fc1 = nn.Linear(512 * block.expansion, 496)
+        self.fc2 = nn.Linear(512 * block.expansion, 496)
+        self.fc51 = nn.Linear(496 * block.expansion, 1)
+        self.fc11 = nn.Linear(496 * block.expansion, 10)
+        self.fc21 = nn.Linear(496 * block.expansion, 8)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -157,14 +158,14 @@ class ResNet(nn.Module):
         """
         
         """
- 
         x = self.layer3(x)
-        x = self.drop(x)
         x = self.layer4(x)
         x=x+x2
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
+        x = self.fc11(x)
+        x = self.drop(x)
         sm = nn.Softmax()
         out = sm(x)
         
@@ -174,15 +175,15 @@ class ResNet(nn.Module):
         """
         
         """
- 
         x = self.layer3(x)
-        x = self.drop(x)
         x = self.layer4(x)
         x=x+x2
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc2(x)
+        x = self.fc21(x)
+        x = self.drop(x)
         sm = nn.Softmax()
         out = sm(x)
         
@@ -200,17 +201,17 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        x = self.drop(x)
         x1 = self.layer2(x)
         x = self.layer3(x1)
-        x = self.drop(x)
         x2 = self.layer4(x)
 #        print (x.shape)
         x3 = self.avgpool(x2)
 #        print (x.shape)
         x3 = x3.view(x3.size(0), -1)
 #        print (x.shape)
-        pred_class = self.fc20(x3)
+        pred_class = self.fc50(x3)
+        pred_class = self.fc51(pred_class)
+        pred_class = self.drop(pred_class)
 #        print (pred_class.shape)
         sm = nn.Sigmoid()
         pred_class = sm(pred_class)

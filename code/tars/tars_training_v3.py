@@ -88,7 +88,7 @@ def assigned_label(labels):
 #        lable1= torch.tensor([0])
 #    else:
 #        lable1= torch.tensor([1])
-    if (labels== 0 or labels== 1 or labels== 2 or labels== 3 or labels== 5 or labels== 8 or labels== 10 or labels== 14):
+    if (labels== 0 or labels== 1 or labels== 2 or labels== 3 or labels== 5 or labels== 8 or labels== 10 or labels== 14 or labels== 15 or labels== 16):
         labels1=torch.tensor([0])
     else:
         labels1=torch.tensor([1])
@@ -108,8 +108,12 @@ def assigned_label(labels):
         labels2=torch.tensor([5])
     elif (labels== 10  or labels== 13):
         labels2=torch.tensor([6])
-    elif (labels== 14):
+    elif (labels== 14 or labels== 17):
         labels2=torch.tensor([7])
+    elif (labels== 15):
+        labels2=torch.tensor([8])
+    elif (labels== 16):
+        labels2=torch.tensor([9])
     return labels1, labels2
     
 def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimizer, scheduler, use_gpu, num_epochs=25, mixup = False, alpha = 0.1):
@@ -129,11 +133,11 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
     parser.add_argument("-mx", '--mixup', default=True, action='store_true' ,help='Use mixup data augementation')
     parser.add_argument("-mxal", '--mixup_alpha', default=0.1, type = float, help='Alpha to be used in mixup agumentation')
     args = parser.parse_args()
-    lr = 0.02
+    lr = 0.01
 
     best_model_wts = model.state_dict()
     best_acc1 = 0.0
-    best_acc2 = 0.0
+    best_acc2 = 0.65
 
     for epoch in range(num_epochs):
         print('Epoch {}/{}'.format(epoch, num_epochs - 1))
@@ -150,7 +154,9 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
             running_loss = 0.0
             running_corrects1 = 0
             running_corrects2 = 0
-
+            counter = 0
+            pred_class = np.zeros(1,dataset_sizes[phase])
+            true_class = np.zeros(1,dataset_sizes[phase])
             # Iterate over data.
             for data in tqdm(dataloaders[phase]):
                 # get the inputs
@@ -187,12 +193,16 @@ def train_model(model, dataloaders, dataset_sizes, criterion,criterion1, optimiz
                     outputs2, _ = outputs2
                 if outputs1.data<.5:
                     preds1 = torch.tensor([0])
+                    
                 else:
                     preds1 = torch.tensor([1])
 #                _, preds1 = torch.max(outputs1.data, 1)
                 _, preds2 = torch.max(outputs2.data, 1)
 #                t = Variable(torch.FloatTensor([0.5]))
 #                ind = (preds1 > t.cuda()).float()*1
+                pred_class[counter]= preds2.cpu().numpy()
+                true_class[counter]= labels
+                counter =counter+1
                 
                 
                 loss1 = criterion1(outputs1, labels1)
