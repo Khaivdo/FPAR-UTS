@@ -58,7 +58,9 @@ def blur_image(image, detections, thresh, scale):
         j = 0
         while detections[0, i, j, 0] >= thresh:
             bounding_box = (detections[0, i, j, 1:] * scale).cpu().numpy()
-            result_image = blur_detection(result_image, bounding_box)
+            startY, startX, endY, endX = bounding_box
+            result_image[startX:endX, startY:endY] = cv2.blur(result_image[startX:endX, startY:endY], (23, 23))
+            # result_image = blur_detection(result_image, bounding_box)
             j += 1
 
     return result_image
