@@ -16,10 +16,10 @@ import numpy as np
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 
-from data.config import cfg
-from s3fd import build_s3fd
-from layers.modules import MultiBoxLoss
-from data.factory import dataset_factory, detection_collate
+from .data.config import cfg
+from .s3fd import build_s3fd
+from .layers.modules import MultiBoxLoss
+from .data.factory import dataset_factory, detection_collate
 
 #os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 

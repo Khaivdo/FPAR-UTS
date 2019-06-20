@@ -11,8 +11,8 @@ import torch.nn.init as init
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from layers import *
-from data.config import cfg
+from .layers import *
+from .data.config import cfg
 import numpy as np
 
 class S3FD(nn.Module):

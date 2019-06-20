@@ -6,7 +6,7 @@ from __future__ import print_function
 
 
 import os
-from data.config import cfg
+from .data.config import cfg
 import cv2
 
 WIDER_ROOT = os.path.join(cfg.HOME, 'WIDER')

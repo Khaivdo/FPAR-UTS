@@ -8,7 +8,7 @@ import os
 import numpy as np
 import csv
 
-from data.config import cfg
+from .data.config import cfg
 
 if not os.path.exists('./data'):
     os.makedirs('./data')

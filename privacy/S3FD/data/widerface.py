@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 import torch.utils.data as data
 import numpy as np
 import random
-from utils.augmentations import preprocess
+from ..utils.augmentations import preprocess
 
 
 class WIDERDetection(data.Dataset):
@@ -123,7 +123,7 @@ def detection_collate(batch):
 
 
 if __name__ == '__main__':
-    from config import cfg
+    from .config import cfg
     dataset = WIDERDetection(cfg.FACE.TRAIN_FILE)
     #for i in range(len(dataset)):
     dataset.pull_item(14)

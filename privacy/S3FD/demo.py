@@ -2,7 +2,7 @@
 
 import os
 import argparse
-from generate import build_net, generate_images, generate_videos
+from .generate import build_net, generate_images, generate_videos
 
 parser = argparse.ArgumentParser(description='s3df demo')
 parser.add_argument('--save_dir', type=str, default='tmp/',

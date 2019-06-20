@@ -16,10 +16,10 @@ import time
 import numpy as np
 from PIL import Image
 
-from data.config import cfg
-from s3fd import build_s3fd
+from .data.config import cfg
+from .s3fd import build_s3fd
 from torch.autograd import Variable
-from utils.augmentations import to_chw_bgr
+from .utils.augmentations import to_chw_bgr
 
 
 use_cuda = torch.cuda.is_available()

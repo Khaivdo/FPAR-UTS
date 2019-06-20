@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 import torch.utils.data as data
 import numpy as np
 import random
-from utils.augmentations import preprocess
+from ..utils.augmentations import preprocess
 
 
 class HandDetection(data.Dataset):

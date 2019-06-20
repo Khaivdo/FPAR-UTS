@@ -13,7 +13,7 @@ import types
 from PIL import Image, ImageEnhance, ImageDraw
 import math
 import six
-from data.config import cfg
+from ..data.config import cfg
 import random
 
 
