@@ -142,7 +142,8 @@ class S3FD(nn.Module):
             features_maps += [feat]
 
         self.priorbox = PriorBox(size, features_maps, cfg)
-        self.priors = Variable(self.priorbox.forward(), volatile=True)
+        #self.priors = Variable(self.priorbox.forward(), volatile=True)
+        self.priors = Variable(self.priorbox.forward())
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
