@@ -20,5 +20,5 @@ if not os.path.exists(args.save_dir):
 
 if __name__ == '__main__':
     net = build_net(args.model)
-    generate_images(net, args.save_dir, args.thresh)
-    #generate_videos(net, args.save_dir, args.thresh)
+    #generate_images(net, args.save_dir, args.thresh)
+    generate_videos(net, args.save_dir, args.thresh)

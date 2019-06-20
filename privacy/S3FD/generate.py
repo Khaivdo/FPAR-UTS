@@ -111,8 +111,6 @@ def generate_image(net, save_dir, img_path, thresh):
 
 
 def generate_video(net, vid_path, save_dir, thresh):
-    print('Protecting Video {}...'.format(vid_path))
-    t1 = time.time()
     output_path = get_new_save_path(save_dir, vid_path)
     print(output_path)
     # create video capture and get video info
@@ -138,9 +136,6 @@ def generate_video(net, vid_path, save_dir, thresh):
     vidcap.release()
     vidwrite.release()
 
-    t2 = time.time()
-    print('done. timer: {}'.format(t2 - t1))
-
 
 def get_new_save_path(save_dir, current_path):
     return os.path.join(save_dir, os.path.basename(current_path))
@@ -148,18 +143,41 @@ def get_new_save_path(save_dir, current_path):
 
 def generate_images(net, save_dir, thresh):
     img_dir = './img'
+    timeStart = time.time()
+    print('Commencing protection of videos...')
     for filename in os.listdir(img_dir):
         if filename.lower().endswith('jpg'):
             img_path = os.path.join(img_dir, filename)
+            time1 = time.time()
+            print('Protecting image {}...'.format(img_path))
             generate_image(net, save_dir, img_path, thresh)
+            time2 = time.time()
+            print('Done. time taken: {}'.format(time2 - time1))
+            print('Cumulative time spent: {}'.format(time2 - timeStart))
+
+    timeFinal = time.time()
+    print('All images have been protected.')
+    print('Total time taken: {}'.format(timeStart-timeFinal))
 
 
 def generate_videos(net, save_dir, thresh):
+    timeStart = time.time()
+    print('Commencing protection of videos...')
     video_dir = './video'
+    video_out_dir = './video_out'
     for filename in os.listdir(video_dir):
         if filename.lower().endswith('mp4'):
             video_path = os.path.join(video_dir, filename)
+            time1 = time.time()
+            print('Protecting video {}...'.format(video_path))
             generate_video(net, video_path, save_dir, thresh)
+            time2 = time.time()
+            print('Done. time taken: {}'.format(time2 - time1))
+            print('Cumulative time spent: {}'.format(time2 - timeStart))
+
+    timeFinal = time.time()
+    print('All videos have been protected.')
+    print('Total time taken: {}'.format(timeStart-timeFinal))
     
 
 def build_net(model): 
