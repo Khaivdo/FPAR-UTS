@@ -41,6 +41,6 @@ if __name__ == '__main__':
         raise TypeError('Input directory does not exist!')
 
     thresh = 0.6
-    model = './S3FD/weights/s3fd.pth'
+    model = './S3FD/weight/s3fd.pth'
     net = build_net(model)
     protect_videos(net, args.i, args.o, thresh)
