@@ -58,7 +58,7 @@ def blur_image(image, detections, thresh, scale):
         j = 0
         while detections[0, i, j, 0] >= thresh:
             bounding_box = (detections[0, i, j, 1:] * scale).cpu().numpy()
-            result_image = blur_detection(image, bounding_box)
+            result_image = blur_detection(result_image, bounding_box)
             j += 1
 
     return result_image
@@ -71,8 +71,9 @@ def blur_detection(image, bounding_box):
     image_area = image[int(pt[1]):int(pt[3]), int(pt[0]):int(pt[2])]
     # blur the detected area
     blurred_image = cv2.GaussianBlur(image_area, (23, 23), 30)
-    # apply the blur to the image
-    image[int(pt[1]):int(pt[1]+blurred_image.shape[0]), int(pt[0]):int(pt[0]+blurred_image.shape[1])] = blurred_image
+    if blurred_image is not None:
+        # apply the blur to the image
+        image[int(pt[1]):int(pt[1]+blurred_image.shape[0]), int(pt[0]):int(pt[0]+blurred_image.shape[1])] = blurred_image
     return image
 
 
