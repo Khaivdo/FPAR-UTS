@@ -127,11 +127,11 @@ def generate_video(net, vid_path, save_dir, thresh):
     success, frame = vidcap.read()
     while success:
         t1 = time.time()
-        print('\tprotecting frame {}'.format(count))
+        print('\tframe{}'.format(count))
         result_frame = detect_and_blur(net, frame, thresh)
         # Write video
         vidwrite.write(result_frame)
-        print('\tframe done in {}'.format(time.time() - t1))
+        print('\tdone in {}'.format(time.time() - t1))
         # Read video
         success, frame = vidcap.read()
         count += 1
