@@ -112,7 +112,7 @@ def generate_image(net, save_dir, img_path, thresh):
 
 def generate_video(net, vid_path, save_dir, thresh):
     output_path = get_new_save_path(save_dir, vid_path)
-    print(output_path)
+    print('Will save protected video to {}'.format(output_path))
     # create video capture and get video info
     vidcap = cv2.VideoCapture(vid_path)
     fps = vidcap.get(cv2.CAP_PROP_FPS)
