@@ -18,6 +18,7 @@ def protect_videos(net, input_dir, output_dir, thresh):
     print('Commencing protection of videos within directory {}...'.format(input_dir))
     create_dir_if_not_exists(output_dir)
     for dirpath, dirnames, filenames in os.walk(input_dir):
+        print(dirpath)
         video_files = (file for file in filenames if file.lower().endswith('mp4'))
         new_dirpath = dirpath.replace(input_dir, output_dir)
         create_dir_if_not_exists(new_dirpath)
