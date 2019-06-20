@@ -33,7 +33,7 @@ def protect_videos(net, input_dir, output_dir, thresh):
 
     timeFinal = time.time()
     print('All videos have been protected.')
-    print('Total time taken: {}'.format(timeStart-timeFinal))
+    print('Total time taken: {}'.format(timeFinal-timeStart))
 
 
 if __name__ == '__main__':

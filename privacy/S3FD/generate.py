@@ -112,7 +112,7 @@ def generate_image(net, save_dir, img_path, thresh):
 
 def generate_video(net, vid_path, save_dir, thresh):
     output_path = get_new_save_path(save_dir, vid_path)
-    print('Will save protected video to {}'.format(output_path))
+    print('\twill save protected video to {}'.format(output_path))
     # create video capture and get video info
     vidcap = cv2.VideoCapture(vid_path)
     fps = vidcap.get(cv2.CAP_PROP_FPS)
@@ -125,10 +125,12 @@ def generate_video(net, vid_path, save_dir, thresh):
     count = 1
     success, frame = vidcap.read()
     while success:
+        t1 = time.time()
+        print('\tprotecting frame {}'.format(count))
         result_frame = detect_and_blur(net, frame, thresh)
         # Write video
         vidwrite.write(result_frame)
-
+        print('frame done in {}'.format(time.time() - t1))
         # Read video
         success, frame = vidcap.read()
         count += 1
@@ -184,10 +186,12 @@ def build_net(model):
     net = build_s3fd('test', cfg.NUM_CLASSES)
 
     if use_cuda:
+        print('Cuda is available. Computations will be done on GPU')
         state_dict = torch.load(model)
         net.cuda()
         cudnn.benckmark = True
     else:
+        print('Cuda is not available. Computations will be done on CPU')
         #setting map_location to cpu will forcefully remap everything onto CPU
         state_dict = torch.load(model, map_location='cpu')
 
