@@ -5,6 +5,7 @@ import os
 def rounded_seconds(t):
     return str(round(t, 3))
 
+
 def convertToRGB(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 

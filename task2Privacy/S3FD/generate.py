@@ -60,23 +60,9 @@ def blur_image(image, detections, thresh, scale):
             bounding_box = (detections[0, i, j, 1:] * scale).cpu().numpy()
             startY, startX, endY, endX = [int(pt) for pt in bounding_box]
             result_image[startX:endX, startY:endY] = cv2.blur(result_image[startX:endX, startY:endY], (23, 23))
-            # result_image = blur_detection(result_image, bounding_box)
             j += 1
 
     return result_image
-    
-
-def blur_detection(image, bounding_box):
-    # not sure what pt stands for
-    pt = bounding_box
-    # get detected image area
-    image_area = image[int(pt[1]):int(pt[3]), int(pt[0]):int(pt[2])]
-    # blur the detected area
-    blurred_image = cv2.GaussianBlur(image_area, (23, 23), 30)
-    if blurred_image is not None:
-        # apply the blur to the image
-        image[int(pt[1]):int(pt[1]+blurred_image.shape[0]), int(pt[0]):int(pt[0]+blurred_image.shape[1])] = blurred_image
-    return image
 
 
 def resize_image(cv2Img):
@@ -128,12 +114,12 @@ def generate_video(net, vid_path, save_dir, thresh):
     count = 1
     success, frame = vidcap.read()
     while success:
-        t1 = time.time()
-        print('\tframe{}'.format(count))
+        # t1 = time.time()
+        # print('\tframe{}'.format(count))
         result_frame = detect_and_blur(net, frame, thresh)
         # Write video
         vidwrite.write(result_frame)
-        print('\tdone in {}'.format(time.time() - t1))
+        # print('\tdone in {}'.format(time.time() - t1))
         # Read video
         success, frame = vidcap.read()
         count += 1

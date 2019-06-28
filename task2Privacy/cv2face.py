@@ -3,8 +3,8 @@ import numpy as np
 import time
 from utils import convertToGRAY, convertToRGB, rounded_seconds, show_image_and_wait
 
-face_cascade = cv2.CascadeClassifier('cv2data/haarcascade_frontalface_alt.xml')
-profile_cascade = cv2.CascadeClassifier('cv2data/haarcascade_profileface.xml')
+face_cascade = cv2.CascadeClassifier('./cv2data/haarcascade_frontalface_alt.xml')
+profile_cascade = cv2.CascadeClassifier('./cv2data/haarcascade_profileface.xml')
 
 def detect_and_blur(classifier, rgb_img, scaleFactor=1.1, minNeighbours=5):
     result_image = np.copy(rgb_img)

@@ -3,7 +3,7 @@ import time
 import argparse
 from S3FD.generate import build_net, generate_video
 from utils import rounded_seconds, get_new_save_path
-from cv2face import create_blurred_video
+from CV2.cv2face import create_blurred_video
 
 parser = argparse.ArgumentParser(description='Privacy protection')
 parser.add_argument('-i', type=str, default='./input', help='Directory that contains the test video segments')
