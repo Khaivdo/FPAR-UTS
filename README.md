@@ -1,6 +1,12 @@
-## Main
-- segmentedVideos: is used to extract frames automatically from VIP CUP segmented video sequences. Make sure you download all the segmented videos and put them in the same directory with the code.
+# FPAR - UTS: Repository for IEEE VIP Cup 2019
+## Team Members
+- Hayden Crain
+- Khai Do
+- Alex Young
+- Nirosh Rambukkana
+## Contents
+- **helpers:** Contains general helper scripts and files used for processing the test data video files.
+- **task1**: Contains our implementation for the first task of the competition.
+- **task2**: Contains our implementation for the second task of the competition.
 
-## Others
-- ExtractVideoToFrame: is used to extract frames from a video given Start and End time
-- gt_office: the ground_truth file that contains info of labels in the videos
+There are README files within each of the directories, which will further explain how to use our implementations.
