@@ -7,38 +7,16 @@ import random
 import glob
 import sys
 import cv2
+import shutil
+import Train.makeDatasetFlow_video as makeDatasetFlow
 
-
-def gen_split(root_dir, stackSize):
-    Dataset = []
-    Labels = []
-    label_name = ['chat', 'clean', 'drink', 'dryer', 'machine', 'microwave', 'mobile', 'paper', 'print', 'read',
-                  'shake', 'staple', 'take', 'typeset', 'walk', 'wash', 'whiteboard', 'write']
-    for subject_folder in os.listdir(root_dir):
-        dir = os.path.join(root_dir, subject_folder)
-        for target in sorted(os.listdir(dir)):
-            video_name = target.split(".")[0]
-            label = video_name.split("_")[-1]
-            if label == 'wave' or label == 'open':
-                continue
-            Dataset.append(os.path.join(dir, target))
-            for i in range(0, len(label_name)):
-                if label == label_name[i]:
-                    label_id = i
-                    break
-                if label == "dry":
-                    label_id = 3
-                    break
-            Labels.append(label_id)
-    return Dataset, Labels
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform=None, sequence=False, stackSize=5,
-                 train=True, numSeg=5, fmt='.jpg', phase='train', seqLen = 25):
+                 train=True, numSeg=5, fmt='.jpg', phase='train', seqLen = 25, extractFrames=False):
 
-
-        self.video,self.labels  = gen_split(
-            root_dir, stackSize)
+        self.video, self.labels, self.frames = makeDatasetFlow.gen_split(
+            root_dir, extractFrames)
         self.spatial_transform = spatial_transform
         self.train = train
         self.numSeg = numSeg
@@ -47,29 +25,51 @@ class makeDataset(Dataset):
         self.fmt = fmt
         self.phase = phase
         self.seqLen = seqLen
+        self.extractFrames = extractFrames
 
     def __len__(self):
         return len(self.video)
 
     def __getitem__(self, idx):
-        dir=self.video[idx]
-        videoCapture = cv2.VideoCapture(self.video[idx])
+        """
+        Input:
+            A video in dataset
+        Output:
+            A sequence of frames extracted from the video and label of this sequence
+        """
         self.spatial_transform.randomize_parameters()
-        numFrame=0
-        while(True):
-            ret,_,=videoCapture.read()
-            if ret is False:
-                break
-            numFrame=numFrame+1
-
         label = self.labels[idx]
-
+        numFrame=0
         inpSeqF = []
-        for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
-            videoCapture.set(cv2.CAP_PROP_POS_FRAMES, int(np.floor(i)))
-            read, img = videoCapture.read()
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img=Image.fromarray(img)
-            inpSeqF.append(self.spatial_transform(img.convert('RGB')))
+
+        if self.extractFrames:                                                  # If frames are extracted
+            for image_path in os.listdir(self.frames[idx]):
+                numFrame=numFrame+1                                             # Count number of frames
+            os.chdir(self.frames[idx])
+
+            # Read, convert and append frames to a sequence
+            for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
+                img = cv2.imread("%d.jpg" % (int(np.floor(i - 1))))
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)
+                inpSeqF.append(self.spatial_transform(img.convert('RGB')))
+
+        else:
+            videoCapture = cv2.VideoCapture(self.video[idx])                    # Capture frames directly from videos
+            while True:
+                ret, _, = videoCapture.read()                                   # Count number of frames captured
+                if ret is False:
+                    break
+                numFrame = numFrame + 1
+
+            # Capture, convert and append frames to a sequence
+            for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
+                videoCapture.set(cv2.CAP_PROP_POS_FRAMES, int(np.floor(i)))     # Capture frame at a certain position
+                read, img = videoCapture.read()
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img)
+                inpSeqF.append(self.spatial_transform(img.convert('RGB')))
+
         inpSeqF = torch.stack(inpSeqF, 0)
+
         return inpSeqF, label

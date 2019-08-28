@@ -7,37 +7,12 @@ import random
 import glob
 import sys
 import cv2
-
-
-def gen_split(root_dir, stackSize):
-    Dataset = []
-
-    Labels = []
-
-    label_name = ['chat', 'clean', 'drink', 'dryer', 'machine', 'microwave', 'mobile', 'paper', 'print', 'read',
-             'shake', 'staple', 'take', 'typeset', 'walk', 'wash', 'whiteboard', 'write']
-    for subject_folder in os.listdir(root_dir):
-        dir = os.path.join(root_dir,subject_folder)
-        for target in sorted(os.listdir(dir)):
-            video_name=target.split(".")[0]
-            label=video_name.split("_")[-1]
-            if label=='wave'or label=='open':
-                continue
-            Dataset.append(os.path.join(dir, target))
-            for i in range(0,len(label_name)):
-                if label==label_name[i]:
-                    label_id=i
-                    break
-                if label=="dry":
-                    label_id = 3
-                    break
-            Labels.append(label_id)
-    return Dataset, Labels
+import Train.makeDatasetFlow_video as makeDatasetFlow
 
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform=None, sequence=False, stackSize=5,
-                 train=True, numSeg=5, fmt='.jpg', phase='train', seqLen = 25):
+                 train=True, numSeg=5, fmt='.jpg', phase='train', seqLen=25, extractFrames=False):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -45,7 +20,7 @@ class makeDataset(Dataset):
                 on a sample.
         """
 
-        self.video,self.labels  = gen_split(
+        self.video, self.labels, self.frames = makeDatasetFlow.gen_split(
             root_dir, stackSize)
         self.spatial_transform = spatial_transform
         self.train = train
@@ -55,94 +30,62 @@ class makeDataset(Dataset):
         self.fmt = fmt
         self.phase = phase
         self.seqLen = seqLen
+        self.extractFrames = extractFrames
 
     def __len__(self):
         return len(self.video)
 
     def __getitem__(self, idx):
-        dir=self.video[idx]
-        videoCapture = cv2.VideoCapture(self.video[idx])
-        self.spatial_transform.randomize_parameters()
-        numFrame=0
-        while(True):
-            ret,_,=videoCapture.read()
-            if ret is False:
-                break
-            numFrame=numFrame+1
 
+        self.spatial_transform.randomize_parameters()
         label = self.labels[idx]
+        inpSeq = []
         inpSeqSegs = []
+
+        # for Flow model
         if self.sequence is True:
-            if numFrame <= self.stackSize:
-                frameStart = np.ones(self.numSeg)
-            else:
-                frameStart = np.linspace(1, numFrame - self.stackSize, self.numSeg)
+            frameStart, startFrame, numFrame = makeDatasetFlow.start_frame(self.extractFrames, self.sequence,
+                                                                           self.numSeg, self.frames[idx],
+                                                                           self.video[idx], self.stackSize, self.phase)
             for startFrame in frameStart:
-                inpSeq = []
                 for k in range(self.stackSize):
                     i = k + int(startFrame)
+                    if self.extractFrames:                                      # If frames are extracted
+                        prev_img, curr_img = makeDatasetFlow.read_img(numFrame, self.frames[idx], i)
+                    else:                                                       # If frames are captured
+                        prev_img, curr_img = makeDatasetFlow.capture_img(numFrame, i)
 
-                    videoCapture.set(cv2.CAP_PROP_POS_FRAMES, i - 1)
-                    _, prev_img = videoCapture.read()
-                    prev_img = cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY)
-                    prev_img = cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY)
-                    videoCapture.set(cv2.CAP_PROP_POS_FRAMES, i)
-                    _, curr_img = videoCapture.read()
-                    curr_img = cv2.cvtColor(curr_img, cv2.COLOR_BGR2GRAY)
-                    curr_img = cv2.cvtColor(curr_img, cv2.COLOR_BGR2GRAY)
-                    flow = cv2.calcOpticalFlowFarneback(prev_img, curr_img, None, 0.702, 5, 10, 2, 7, 1.5,cv2.OPTFLOW_FARNEBACK_GAUSSIAN)
-
-                    flow = np.clip(flow, -15, 15)
-                    norm_flow = ((flow + 15) * 8.5).astype(int)
-                    flow_x = norm_flow[..., 0]
-                    flow_y = norm_flow[..., 1]
-                    flow_x = Image.fromarray(flow_x)
-                    flow_y = Image.fromarray(flow_y)
-                    # If TypeError: Cannot handle this data type occurs, please change to the following code
-                    # flow_x = Image.fromarray(flow_x.astype(np.uint8))
-                    # flow_y = Image.fromarray(flow_y.astype(np.uint8))
-
-                    inpSeq.append(self.spatial_transform(flow_x.convert('L'), inv=True, flow=True))
-                    inpSeq.append(self.spatial_transform(flow_y.convert('L'), inv=False, flow=True))
+                    # Optical Flow
+                    inpSeq = makeDatasetFlow.optical_flow(prev_img, curr_img, self.spatial_transform, inpSeq)
                 inpSeqSegs.append(torch.stack(inpSeq, 0).squeeze())
             inpSeqSegs = torch.stack(inpSeqSegs, 0)
         else:
-            if numFrame <= self.stackSize:
-                startFrame = 1
-            else:
-                if self.phase == 'train':
-                    startFrame = random.randint(1, numFrame - self.stackSize)
-                else:
-                    startFrame = np.ceil((numFrame - self.stackSize)/2)
-            inpSeq = []
+            _, startFrame, numFrame = makeDatasetFlow.start_frame(self.extractFrames, self.sequence, self.numSeg,
+                                                                  self.frames[idx],
+                                                                  self.video[idx], self.stackSize, self.phase)
             for k in range(self.stackSize):
                 i = k + int(startFrame)
-                videoCapture.set(cv2.CAP_PROP_POS_FRAMES, i - 1)
-                _, prev_img = videoCapture.read()
-                prev_img = cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY)
-                videoCapture.set(cv2.CAP_PROP_POS_FRAMES, i)
-                _, curr_img = videoCapture.read()
-                curr_img = cv2.cvtColor(curr_img, cv2.COLOR_BGR2GRAY)
-                flow = cv2.calcOpticalFlowFarneback(prev_img, curr_img, None, 0.702, 5, 10, 2, 7, 1.5,cv2.OPTFLOW_FARNEBACK_GAUSSIAN)
+                if self.extractFrames:                                          # If frames are extracted
+                    prev_img, curr_img = makeDatasetFlow.read_img(numFrame, self.frames[idx], i)
+                else:                                                           # If frames are captured
+                    prev_img, curr_img = makeDatasetFlow.capture_img(numFrame, self.video[idx], i)
 
-                flow = np.clip(flow, -15, 15)
-                norm_flow = ((flow + 15) * 8.5).astype(int)
-                flow_x = norm_flow[..., 0]
-                flow_y = norm_flow[..., 1]
-                flow_x = Image.fromarray(flow_x)
-                flow_y = Image.fromarray(flow_y)
-                #If TypeError: Cannot handle this data type occurs, please change to the following code
-                #flow_x = Image.fromarray(flow_x.astype(np.uint8))
-                #flow_y = Image.fromarray(flow_y.astype(np.uint8))
-                inpSeq.append(self.spatial_transform(flow_x.convert('L'), inv=True, flow=True))
-                inpSeq.append(self.spatial_transform(flow_y.convert('L'), inv=False, flow=True))
+                # Optical Flow
+                inpSeq = makeDatasetFlow.optical_flow(prev_img, curr_img, self.spatial_transform, inpSeq)
             inpSeqSegs = torch.stack(inpSeq, 0).squeeze(1)
+        os.chdir(self.frames[idx])
         inpSeqF = []
+
+        # for RGB model
         for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
-            videoCapture.set(cv2.CAP_PROP_POS_FRAMES, int(i))
-            read, img = videoCapture.read()
+            if self.extractFrames:
+                img = cv2.imread("%d.jpg" % (int(np.floor(i)) - 1))
+            else:
+                videoCapture = cv2.VideoCapture(self.video[idx])
+                videoCapture.set(cv2.CAP_PROP_POS_FRAMES, int(np.floor(i) - 1))
+                read, img = videoCapture.read()
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img=Image.fromarray(img)
+            img = Image.fromarray(img)
             inpSeqF.append(self.spatial_transform(img.convert('RGB')))
         inpSeqF = torch.stack(inpSeqF, 0)
         return inpSeqSegs, inpSeqF, label

@@ -4,6 +4,12 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 class MyConvLSTMCell(nn.Module):
+    """To perform temporal encoding of frame level features
+    Input:
+        Image features with spatial attention of all input frames
+    Output:
+        Features describing the entire video frames in both temporal and spatial dimensions
+    """
 
     def __init__(self, input_size, hidden_size, kernel_size=3, stride=1, padding=1):
         super(MyConvLSTMCell, self).__init__()
@@ -12,18 +18,20 @@ class MyConvLSTMCell(nn.Module):
         self.kernel_size = kernel_size
         self.stride = stride
         self.padding = padding
+
+        # Input state
         self.conv_i_xx = nn.Conv2d(input_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding)
         self.conv_i_hh = nn.Conv2d(hidden_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding,
                                    bias=False)
-
+        # Forget state
         self.conv_f_xx = nn.Conv2d(input_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding)
         self.conv_f_hh = nn.Conv2d(hidden_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding,
                                    bias=False)
-
+        # Memory state
         self.conv_c_xx = nn.Conv2d(input_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding)
         self.conv_c_hh = nn.Conv2d(hidden_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding,
                                    bias=False)
-
+        # Output state
         self.conv_o_xx = nn.Conv2d(input_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding)
         self.conv_o_hh = nn.Conv2d(hidden_size, hidden_size, kernel_size=kernel_size, stride=stride, padding=padding,
                                    bias=False)
@@ -45,9 +53,16 @@ class MyConvLSTMCell(nn.Module):
         torch.nn.init.xavier_normal_(self.conv_o_hh.weight)
 
     def forward(self, x, state):
+        """"
+        Output:
+            ct: The memory of the convLSTM module
+            ht: The hidden state
+        """
         if state is None:
             state = (Variable(torch.randn(x.size(0), x.size(1), x.size(2), x.size(3)).cuda()),
                      Variable(torch.randn(x.size(0), x.size(1), x.size(2), x.size(3)).cuda()))
+
+        # Update states of the convLSTM
         ht_1, ct_1 = state
         it = torch.sigmoid(self.conv_i_xx(x) + self.conv_i_hh(ht_1))
         ft = torch.sigmoid(self.conv_f_xx(x) + self.conv_f_hh(ht_1))
@@ -55,4 +70,5 @@ class MyConvLSTMCell(nn.Module):
         ct = (ct_tilde * it) + (ct_1 * ft)
         ot = torch.sigmoid(self.conv_o_xx(x) + self.conv_o_hh(ht_1))
         ht = ot * torch.tanh(ct)
+
         return ht, ct
