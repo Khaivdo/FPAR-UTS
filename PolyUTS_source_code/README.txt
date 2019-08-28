@@ -23,6 +23,9 @@ Due to the difference between different OpenCV version, you may have to change
 'flow_x=Image.fromarry(flowx)' to 'flow_x=Image.fromarry(flowx.astype(np.uint8))'
 'flow_y=Image.fromarry(flowy)' to 'flow_x=Image.fromarry(flowy.astype(np.uint8))'
 
+## Download pre-trained model
+    https://drive.google.com/drive/folders/1ZxIsNGeGrldX0DYqEjPFkRBfdCzewYx3?usp=sharing
+
 ## Performance Evaluation on Test Dataset
 
 1.  Open "PolyUTS_source_code" folder with Command Prompt.
