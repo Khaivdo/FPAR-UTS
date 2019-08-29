@@ -36,7 +36,7 @@ class attentionModel(nn.Module):
             bz, nc, h, w = feature_conv.size()
             feature_conv1 = feature_conv.view(bz, nc, h*w)
 
-            # Classified activity and its probability
+            # Classify activity and its probability
             probs, idxs = logit.sort(1, True)
             class_idx = idxs[:, 0]
 

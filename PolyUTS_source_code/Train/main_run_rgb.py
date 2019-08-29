@@ -112,7 +112,7 @@ def rgb_training_stages(stage, num_classes, memSize, stage1_dict):
 
     model.lstm_cell.train(True)
     model.classifier.train(True)
-    model.cuda()  # Copy CPU data to GPU
+    model.cuda()                                                # Copy CPU data to GPU
 
     return model, train_params
 
@@ -154,17 +154,17 @@ def main_run(dataset, stage, train_data_dir1, val_data_dir, stage1_dict, out_dir
 
     for epoch in range(numEpochs):
         start = time.time()
-        writer = SummaryWriter(model_folder)  # Save results to txt files
+        writer = SummaryWriter(model_folder)                    # Save results to txt files
         train_log_loss = open((model_folder + '/train_log_loss.txt'), 'a')
         train_log_acc = open((model_folder + '/train_log_acc.txt'), 'a')
         val_log_loss = open((model_folder + '/val_log_loss.txt'), 'a')
         val_log_acc = open((model_folder + '/val_log_acc.txt'), 'a')
-        optim_scheduler.step()  # Update the learning rate
+        optim_scheduler.step()                                  # Update the learning rate
         epoch_loss = 0
         numCorrTrain = 0
         trainSamples = 0
         iterPerEpoch = 0
-        model.lstm_cell.train(True).cuda()  # Train the LSTM and classifier layers if it is stage 1
+        model.lstm_cell.train(True).cuda()                      # Train the LSTM and classifier layers if it is stage 1
         model.classifier.train(True).cuda()
 
         # Add scalar data to summarize the changes in learning rate
@@ -179,19 +179,19 @@ def main_run(dataset, stage, train_data_dir1, val_data_dir, stage1_dict, out_dir
             model.resNet.layer4[2].conv2.train(True)
             model.resNet.fc.train(True)
 
-        for i, (inputs, targets) in enumerate(train_loader):  # Loop through all training samples
+        for i, (inputs, targets) in enumerate(train_loader):    # Loop through all training samples
             train_iter += 1
             iterPerEpoch += 1
-            optimizer_fn.zero_grad()  # Zero out the gradients to update model parameters
+            optimizer_fn.zero_grad()                            # Zero out the gradients to update model parameters
 
             # Convert input frames to training variables
             inputVariable = Variable(inputs.permute(1, 0, 2, 3, 4).cuda())
             labelVariable = Variable(targets.cuda())
             trainSamples += inputs.size(0)
-            output_label, _ = model(inputVariable)  # Pass input variables to RGB module
+            output_label, _ = model(inputVariable)              # Pass input variables to RGB module
             loss = loss_fn(output_label, labelVariable)
-            loss.backward()  # Back-propagation
-            optimizer_fn.step()  # Update the model's parameters
+            loss.backward()                                     # Back-propagation
+            optimizer_fn.step()                                 # Update the model's parameters
             _, predicted = torch.max(output_label.data, 1)
 
             # Update number of activities being classified correctly and training loss
@@ -211,9 +211,9 @@ def main_run(dataset, stage, train_data_dir1, val_data_dir, stage1_dict, out_dir
         train_log_loss.write('Val Loss after {} epochs = {}\n'.format(epoch + 1, avg_loss))
         train_log_acc.write('Val Accuracy after {} epochs = {}%\n'.format(epoch + 1, trainAccuracy))
 
-        if val_data_dir is not None:  # Validation
+        if val_data_dir is not None:                            # Validation
             if (epoch + 1) % 1 == 0:
-                model.train(False)  # For validation dataset, skip training model
+                model.train(False)                              # For validation dataset, skip training model
                 val_loss_epoch = 0
                 val_iter = 0
                 val_samples = 0
@@ -221,13 +221,13 @@ def main_run(dataset, stage, train_data_dir1, val_data_dir, stage1_dict, out_dir
                 for j, (inputs, targets) in enumerate(val_loader):
                     val_iter += 1
                     val_samples += inputs.size(0)
-                    with torch.no_grad():  # Temporarily set all the requires_grad flag to false
-
+                    with torch.no_grad():                       # Temporarily set all the requires_grad flag to false
                         inputVariable = Variable(inputs.permute(1, 0, 2, 3, 4).cuda())
+
                         # Overlap the compute of the model and the transfer of the ground-truth
                         labelVariable = Variable(targets.cuda(non_blocking=True))
 
-                    output_label, _ = model(inputVariable)  # Implement the newly trained model
+                    output_label, _ = model(inputVariable)      # Implement the newly trained model
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.item()
                     _, predicted = torch.max(output_label.data, 1)
@@ -240,8 +240,7 @@ def main_run(dataset, stage, train_data_dir1, val_data_dir, stage1_dict, out_dir
                 val_log_loss.write('Val Loss after {} epochs = {}\n'.format(epoch + 1, avg_val_loss))
                 val_log_acc.write('Val Accuracy after {} epochs = {}%\n'.format(epoch + 1, val_accuracy))
 
-                # Save the model with highest accuracy
-                if val_accuracy > min_accuracy:
+                if val_accuracy > min_accuracy:                 # Save the model with highest accuracy
                     save_path_model = (model_folder + '/model_rgb_state_dict.pth')
                     torch.save(model.state_dict(), save_path_model)
                     val_log_loss.write(' (Saved) \n')
@@ -276,7 +275,7 @@ def __main__(stage_input, train_dir, val_dir):
     parser.add_argument('--seqLen', type=int, default=25, help='Length of sequence')
     parser.add_argument('--trainBatchSize', type=int, default=32, help='Training batch size')
     parser.add_argument('--valBatchSize', type=int, default=64, help='Validation batch size')
-    parser.add_argument('--numEpochs', type=int, default=300, help='Number of epochs')
+    parser.add_argument('--numEpochs', type=int, default=250, help='Number of epochs')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--stepSize1', type=float, default=[25, 75, 150], nargs="+", help='Learning rate decay step')
     parser.add_argument('--stepSize2', type=float, default=[25, 75], nargs="+", help='Learning rate decay step')
@@ -292,9 +291,9 @@ def __main__(stage_input, train_dir, val_dir):
     trainBatchSize = args.trainBatchSize
     valBatchSize = args.valBatchSize
 
-    # Train stage 1 for 300 epochs with learning rate decayed by a factor of 0.1 after epochs 25, 75, 150
+    # Train stage 1 for 250 epochs with learning rate decayed by a factor of 0.1 after epochs 25, 75, 150
     if stage == 1:
-        numEpochs = int(300)
+        numEpochs = int(250)
         lr1 = float(1e-3)
         stepSize = args.stepSize1
 

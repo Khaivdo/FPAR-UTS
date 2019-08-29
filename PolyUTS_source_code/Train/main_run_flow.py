@@ -34,7 +34,7 @@ def compile_dataset(trainDir1, valDir, stackSize, trainBatchSize, valBatchSize):
         vid_seq_val = makeDataset(valDir,
                                   spatial_transform=Compose([Scale(256), CenterCrop(224), ToTensor(), normalize]),
                                   sequence=False, stackSize=stackSize, fmt='.jpg', phase='Test', extractFrames=False)
-        
+
         val_loader = torch.utils.data.DataLoader(vid_seq_val, batch_size=valBatchSize,
                                                  shuffle=False, num_workers=2, pin_memory=True)
         valInstances = vid_seq_val.__len__()
@@ -68,6 +68,7 @@ def main_run(dataset, trainDir1, valDir, outDir, stackSize, trainBatchSize, valB
     else:
         os.makedirs(model_folder)
 
+    # Load compiled dataset
     train_loader, val_loader = compile_dataset(trainDir1, valDir, stackSize, trainBatchSize, valBatchSize)
 
     if torch.cuda.device_count() > 1:
@@ -75,7 +76,7 @@ def main_run(dataset, trainDir1, valDir, outDir, stackSize, trainBatchSize, valB
     else:
         cuda1 = torch.device('cuda:0')
 
-    model = flow_resnet34(True, channels=2*stackSize, num_classes=num_classes)          # Load optical flow module
+    model = flow_resnet34(True, channels=2*stackSize, num_classes=num_classes)          # Load fresh flow module
     model.train(True)                                                                   # Retrain the module
     train_params = list(model.parameters())
     model.cuda(cuda1)                                                                   # Copy CPU data to cuda1
@@ -114,7 +115,7 @@ def main_run(dataset, trainDir1, valDir, outDir, stackSize, trainBatchSize, valB
             output_label, _ = model(inputVariable)                  # Train Flow module from converted frames
             loss = loss_fn(output_label, labelVariable)
             loss.backward()                                         # Back-propagation
-            optimizer_fn.step()   # For pytorch > 1.1.0v, optim_scheduler.step() should be put after optimizer_fn.step()
+            optimizer_fn.step()            # Put optim_"scheduler.step()" after "optimizer_fn.step()" (pytorch > 1.1.0v)
 
             _, predicted = torch.max(output_label.data, 1)
             numCorrTrain += (predicted == targets.cuda(cuda1)).sum().item()
@@ -190,9 +191,9 @@ def __main__(train_dir,val_dir):
     parser.add_argument('--stackSize', type=int, default=5, help='Length of sequence')
     parser.add_argument('--trainBatchSize', type=int, default=32, help='Training batch size')
     parser.add_argument('--valBatchSize', type=int, default=32, help='Validation batch size')
-    parser.add_argument('--numEpochs', type=int, default=75, help='Number of epochs')
+    parser.add_argument('--numEpochs', type=int, default=150, help='Number of epochs')
     parser.add_argument('--lr', type=float, default=1e-2, help='Learning rate')
-    parser.add_argument('--stepSize', type=float, default=[150, 300, 500], nargs="+", help='Learning rate decay step')
+    parser.add_argument('--stepSize', type=float, default=[50, 100], nargs="+", help='Learning rate decay step')
     parser.add_argument('--decayRate', type=float, default=0.5, help='Learning rate decay rate')
 
     args = parser.parse_args()

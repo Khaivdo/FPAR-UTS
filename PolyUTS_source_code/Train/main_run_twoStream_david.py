@@ -59,18 +59,18 @@ def twoStream_model(flowModel, rgbModel, stackSize, memSize, num_classes):
     """
     model = twoStreamAttentionModel(flowModel=flowModel, frameModel=rgbModel, stackSize=stackSize, memSize=memSize,
                                     num_classes=num_classes)
-    for params in model.parameters():
+    for params in model.parameters():                               # Reuse parameters from pre-trained models
         params.requires_grad = False
 
     model.train(False)
     train_params = []
 
-    for params in model.classifier.parameters():
+    for params in model.classifier.parameters():                    # Train the classifier layer of twoStream model
         params.requires_grad = True
         train_params += [params]
 
-    for params in model.frameModel.lstm_cell.parameters():
-        train_params += [params]
+    for params in model.frameModel.lstm_cell.parameters():          # Redo the stage 2 training of RGB model
+        train_params += [params]                                    # (Classifier layer of RGB model is removed)
         params.requires_grad = True
 
     for params in model.frameModel.resNet.layer4[0].conv1.parameters():
@@ -102,8 +102,8 @@ def twoStream_model(flowModel, rgbModel, stackSize, memSize, num_classes):
         train_params += [params]
 
     base_params = []
-    for params in model.flowModel.layer4.parameters():
-        base_params += [params]
+    for params in model.flowModel.layer4.parameters():              # Retrain the last layer of Flow model
+        base_params += [params]                                     # (Classifier layer of Flow model is removed)
         params.requires_grad = True
 
     model.cuda()
@@ -153,7 +153,7 @@ def main_run(dataset, flowModel, rgbModel, stackSize, seqLen, memSize, trainData
 
     for epoch in range(numEpochs):
         start = time.time()
-        writer = SummaryWriter(model_folder)                                    # Save results to txt files
+        writer = SummaryWriter(model_folder)                                  # Save results to txt files
         train_log_loss = open((model_folder + '/train_log_loss.txt'), 'w')
         train_log_acc = open((model_folder + '/train_log_acc.txt'), 'w')
         val_log_loss = open((model_folder + '/val_log_loss.txt'), 'w')
