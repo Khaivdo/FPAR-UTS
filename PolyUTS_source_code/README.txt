@@ -25,6 +25,9 @@ Due to the difference between different OpenCV version, you may have to change
 
 ## Create a new directory named "Pretrained_Model" and download this model to that directory
     https://drive.google.com/drive/folders/1ZxIsNGeGrldX0DYqEjPFkRBfdCzewYx3?usp=sharing
+    
+## Create a new directory named "models" and download this model to that directory
+    https://drive.google.com/file/d/1bjgLWldsENJ1csz2F67b4hPVfhkYN87g/view?usp=sharing
 
 ## Performance Evaluation on Test Dataset
 
