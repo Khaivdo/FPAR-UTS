@@ -13,8 +13,9 @@
 - Evan Cheng
 - Rui Zhao (Postgraduate)
 ## Contents
+- **PolyUTS_souce_code:** Contains HK PolyU implementation 
 - **helpers:** Contains general helper scripts and files used for processing the test data video files.
-- **task1**: Contains our implementation for the first task of the competition.
-- **task2**: Contains our implementation for the second task of the competition.
+- **task1**: Contains UTS implementation for the first task of the competition.
+- **task2**: Contains UTS implementation for the second task of the competition.
 
 There are README files within each of the directories, which will further explain how to use our implementations.
