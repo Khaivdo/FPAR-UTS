@@ -41,8 +41,8 @@ def compile_dataset(train_data_dir1, val_data_dir, seqLen, trainBatchSize, valBa
         valInstances = vid_seq_val.__len__()
     trainInstances = vid_seq_train.__len__()
 
-    print('Number of samples in the dataset: training = {} | validation = {}'.format(trainInstances / 2,
-                                                                                     valInstances / 2))
+    print('Number of samples in the dataset: training = {} | validation = {}'.format(trainInstances, valInstances))
+
     return train_loader, val_loader
 
 
@@ -275,7 +275,7 @@ def __main__(stage_input, train_dir, val_dir):
     parser.add_argument('--seqLen', type=int, default=25, help='Length of sequence')
     parser.add_argument('--trainBatchSize', type=int, default=32, help='Training batch size')
     parser.add_argument('--valBatchSize', type=int, default=64, help='Validation batch size')
-    parser.add_argument('--numEpochs', type=int, default=250, help='Number of epochs')
+    parser.add_argument('--numEpochs', type=int, default=300, help='Number of epochs')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--stepSize1', type=float, default=[25, 75, 150], nargs="+", help='Learning rate decay step')
     parser.add_argument('--stepSize2', type=float, default=[25, 75], nargs="+", help='Learning rate decay step')
@@ -291,9 +291,9 @@ def __main__(stage_input, train_dir, val_dir):
     trainBatchSize = args.trainBatchSize
     valBatchSize = args.valBatchSize
 
-    # Train stage 1 for 250 epochs with learning rate decayed by a factor of 0.1 after epochs 25, 75, 150
+    # Train stage 1 for 300 epochs with learning rate decayed by a factor of 0.1 after epochs 25, 75, 150
     if stage == 1:
-        numEpochs = int(250)
+        numEpochs = int(300)
         lr1 = float(1e-3)
         stepSize = args.stepSize1
 

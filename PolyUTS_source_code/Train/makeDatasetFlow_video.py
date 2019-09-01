@@ -215,7 +215,7 @@ class makeDataset(Dataset):
                     if self.extractFrames:
                         prev_img, curr_img = read_img(numFrame, self.frames[idx], i)
                     else:
-                        prev_img, curr_img = capture_img(numFrame, i)
+                        prev_img, curr_img = capture_img(numFrame, self.video[idx], i)
                     inpSeq = optical_flow(prev_img, curr_img, self.spatial_transform, inpSeq)
                 inpSeqSegs.append(torch.stack(inpSeq, 0).squeeze())
             inpSeqSegs = torch.stack(inpSeqSegs, 0)

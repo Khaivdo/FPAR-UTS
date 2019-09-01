@@ -53,7 +53,7 @@ class makeDataset(Dataset):
                     if self.extractFrames:                                      # If frames are extracted
                         prev_img, curr_img = makeDatasetFlow.read_img(numFrame, self.frames[idx], i)
                     else:                                                       # If frames are captured
-                        prev_img, curr_img = makeDatasetFlow.capture_img(numFrame, i)
+                        prev_img, curr_img = makeDatasetFlow.capture_img(numFrame, self.video[idx], i)
 
                     # Optical Flow
                     inpSeq = makeDatasetFlow.optical_flow(prev_img, curr_img, self.spatial_transform, inpSeq)

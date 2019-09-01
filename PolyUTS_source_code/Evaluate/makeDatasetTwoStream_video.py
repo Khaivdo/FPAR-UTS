@@ -8,20 +8,27 @@ import glob
 import sys
 import cv2
 import matplotlib.pyplot as plt
+import re
+
 
 #New_Dataset_save=r"C:\Users\enkmlam\Downloads\private_new\train\flow"
 def gen_split(root_dir, stackSize):
     Dataset = []
 
     Labels = []
-
+    New_dir = ['kenya_3', 'kenya_4', 'oxford_3', 'oxford_4', 'oxford_5']
     label_name = ['chat', 'clean', 'drink', 'dryer', 'machine', 'microwave', 'mobile', 'paper', 'print', 'read',
              'shake', 'staple', 'take', 'typeset', 'walk', 'wash', 'whiteboard', 'write']
     for subject_folder in os.listdir(root_dir):
         dir = os.path.join(root_dir,subject_folder)
         for target in sorted(os.listdir(dir)):
-            video_name=target.split(".")[0]
-            label=video_name.split("_")[-1]
+            if subject_folder in New_dir:  # Videos from test_dataset_1
+                video_name = target.split(".")[0]
+                num_label = video_name.split("-")[0]
+                label = re.split('(\d+)', num_label)[-1]
+            elif subject_folder not in New_dir:  # Videos from segmented folders
+                video_name = target.split(".")[0]
+                label = video_name.split("_")[-1]
             if label=='wave'or label=='open':
                 continue
             Dataset.append(os.path.join(dir, target))

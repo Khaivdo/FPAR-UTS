@@ -48,8 +48,8 @@ def compile_dataset(trainDatasetDir, valDatasetDir, seqLen, stackSize, valBatchS
         valSamples = vid_seq_val.__len__()
     trainSamples = vid_seq_train.__len__()
 
-    print('Number of samples in the dataset: training = {} | validation = {}'.format(trainSamples / 2,
-                                                                                     valSamples / 2))
+    print('Number of samples in the dataset: training = {} | validation = {}'.format(trainSamples, valSamples))
+
     return train_loader, val_loader, trainSamples, valSamples
 
 
@@ -154,10 +154,10 @@ def main_run(dataset, flowModel, rgbModel, stackSize, seqLen, memSize, trainData
     for epoch in range(numEpochs):
         start = time.time()
         writer = SummaryWriter(model_folder)                                  # Save results to txt files
-        train_log_loss = open((model_folder + '/train_log_loss.txt'), 'w')
-        train_log_acc = open((model_folder + '/train_log_acc.txt'), 'w')
-        val_log_loss = open((model_folder + '/val_log_loss.txt'), 'w')
-        val_log_acc = open((model_folder + '/val_log_acc.txt'), 'w')
+        train_log_loss = open((model_folder + '/train_log_loss.txt'), 'a')
+        train_log_acc = open((model_folder + '/train_log_acc.txt'), 'a')
+        val_log_loss = open((model_folder + '/val_log_loss.txt'), 'a')
+        val_log_acc = open((model_folder + '/val_log_acc.txt'), 'a')
         optim_scheduler.step()                                                # Update the learning rate
         epoch_loss = 0
         numCorrTrain = 0
@@ -216,6 +216,7 @@ def main_run(dataset, flowModel, rgbModel, stackSize, seqLen, memSize, trainData
                     torch.save(model.state_dict(), (model_save_path + '/model_twoStream_state_dict.pth'))
                     val_log_loss.write(' (Saved) \n')
                     min_accuracy = val_accuracy
+                    train_min_accuracy = trainAccuracy
                 if val_accuracy == min_accuracy and trainAccuracy > train_min_accuracy:
                     save_path_model = (model_folder + '/model_twoStream_state_dict.pth')
                     torch.save(model.state_dict(), save_path_model)
