@@ -23,7 +23,7 @@ Due to the difference between different OpenCV version, you may have to change
 'flow_x=Image.fromarry(flowx)' to 'flow_x=Image.fromarry(flowx.astype(np.uint8))'
 'flow_y=Image.fromarry(flowy)' to 'flow_x=Image.fromarry(flowy.astype(np.uint8))'
 
-## Download pre-trained model
+## Create a new directory named "Pretrained_Model" and download this model to that directory
     https://drive.google.com/drive/folders/1ZxIsNGeGrldX0DYqEjPFkRBfdCzewYx3?usp=sharing
 
 ## Performance Evaluation on Test Dataset
