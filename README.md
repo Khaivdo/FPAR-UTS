@@ -1,4 +1,14 @@
 # FPAR - UTS & HK PolyU: Repository for IEEE VIP Cup 2019
+## Received award
+<img src="https://github.com/Khaivdo/FPAR-UTS-HKPolyU/blob/master/award/IMG_5636.JPG" height="350" width="550">
+
+<img src="https://github.com/Khaivdo/FPAR-UTS-HKPolyU/blob/master/award/IMG_5637.JPG" height="350" width="550">
+
+## Professors
+- Prof. Kenneth K.M. Lam, The Hong Kong Polytechnic University
+(PolyU)
+- Prof. Xiangjian He, University of Technology, Sydney (UTS)
+
 ## UTS Team Members
 - Hayden Crain
 - Khai Do
